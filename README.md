@@ -28,12 +28,15 @@ Scalable full-stack online examination platform with:
 
 ```text
 app/
+	database.py
 	api/
 		router.py
 		routes/
 			auth.py
 			exams.py
 			contestants.py
+	routes/
+		exam_routes.py
 	core/
 		config.py
 		deps.py
@@ -65,6 +68,8 @@ app/
 		auth_service.py
 		exam_service.py
 		contestant_service.py
+	utils/
+		settings.py
 	main.py
 scripts/
 	seed_admin.py
@@ -144,19 +149,25 @@ Indexes included for session lookup, response uniqueness per question, and leade
 ### Backend
 
 1. Create `.env` from `.env.example`.
-2. Install dependencies:
+2. Ensure PostgreSQL URL is configured:
+
+```env
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/exam_engine
+```
+
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Seed admin user:
+4. Seed admin user:
 
 ```bash
 python scripts/seed_admin.py
 ```
 
-4. Run API:
+5. Run API with uvicorn:
 
 ```bash
 uvicorn app.main:app --reload
