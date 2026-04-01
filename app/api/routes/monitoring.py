@@ -52,7 +52,13 @@ async def monitoring_stream(websocket: WebSocket, token: str = Query(default="")
 
     auth_db = SessionLocal()
     try:
-        if not token or not _verify_admin_token(token, auth_db):
+        try:
+            is_authorized = bool(token) and _verify_admin_token(token, auth_db)
+        except Exception:
+            await websocket.close(code=1008, reason="Authorization check failed")
+            return
+
+        if not is_authorized:
             await websocket.close(code=1008, reason="Unauthorized")
             return
     finally:

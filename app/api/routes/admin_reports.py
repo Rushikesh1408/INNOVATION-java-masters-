@@ -15,6 +15,13 @@ from app.services.log_service import LogService
 router = APIRouter(prefix="/admin", tags=["admin-reports"])
 
 
+def _sanitize_csv_value(value):
+    text = "" if value is None else str(value)
+    if text.startswith(("=", "+", "-", "@", "\t", "\r", "\n")):
+        return f"'{text}"
+    return text
+
+
 @router.get("/audit-logs", response_model=list[LogResponse])
 def list_audit_logs(
     limit: int = Query(default=100, ge=1, le=1000),
@@ -40,13 +47,13 @@ def export_results_csv(
     for item in entries:
         writer.writerow(
             [
-                item["rank"],
-                item["user_id"],
-                item["user_name"],
-                item["score"],
-                item["accuracy"],
-                item["total_time"],
-                item["flagged"],
+                _sanitize_csv_value(item["rank"]),
+                _sanitize_csv_value(item["user_id"]),
+                _sanitize_csv_value(item["user_name"]),
+                _sanitize_csv_value(item["score"]),
+                _sanitize_csv_value(item["accuracy"]),
+                _sanitize_csv_value(item["total_time"]),
+                _sanitize_csv_value(item["flagged"]),
             ]
         )
 

@@ -9,7 +9,12 @@ from app.core.config import get_settings
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
-redis_client = Redis.from_url(settings.redis_url, decode_responses=True)
+redis_client = Redis.from_url(
+    settings.redis_url,
+    decode_responses=True,
+    socket_connect_timeout=2,
+    socket_timeout=2,
+)
 
 
 def safe_get_json(key: str):

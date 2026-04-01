@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+import logging
 import random
 from uuid import UUID
 
@@ -15,6 +16,8 @@ from app.services.log_service import LogService
 SUSPICIOUS_TIME_THRESHOLD_MS = 2000
 AUTO_SUBMIT_WARNING_THRESHOLD = 2
 FAST_ANSWER_FLAG_COUNT_THRESHOLD = 3
+DEFAULT_SESSION_STATE_TTL_SECONDS = 3600
+logger = logging.getLogger(__name__)
 
 
 class ContestantService:
@@ -26,6 +29,16 @@ class ContestantService:
 
     def register(self, name: str, email: str):
         return self.repo.get_or_create_user(name, email)
+
+    def _compute_session_ttl_seconds(self, time_limit) -> int:
+        if isinstance(time_limit, (int, float)) and time_limit > 0:
+            return max(int(time_limit) * 60, 60)
+
+        logger.warning(
+            "Invalid exam time_limit for session state TTL: %s. Using default TTL.",
+            time_limit,
+        )
+        return DEFAULT_SESSION_STATE_TTL_SECONDS
 
     def start_exam(
         self,
@@ -87,6 +100,7 @@ class ContestantService:
             user_id=user.id,
             context=f"exam_id={exam_id} session_id={exam_session.id}",
         )
+        ttl_seconds = self._compute_session_ttl_seconds(exam.time_limit)
         safe_set_json(
             key=f"session_state:{exam_session.id}",
             payload={
@@ -95,7 +109,7 @@ class ContestantService:
                 "status": "active",
                 "answered": {},
             },
-            ttl_seconds=exam.time_limit * 60,
+            ttl_seconds=ttl_seconds,
         )
         return exam_session, exam, randomized_questions
 
@@ -158,10 +172,12 @@ class ContestantService:
                 "selected_option": selected_option,
                 "time_taken": time_taken,
             }
+            exam = self.exam_repo.get_exam(exam_session.exam_id)
+            ttl_seconds = self._compute_session_ttl_seconds(exam.time_limit if exam else None)
             safe_set_json(
                 key=state_key,
                 payload=state,
-                ttl_seconds=3600,
+                ttl_seconds=ttl_seconds,
             )
             self.log_service.write(
                 action="ANSWER_SUBMITTED",

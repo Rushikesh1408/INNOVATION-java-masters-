@@ -92,6 +92,22 @@ class ExamRepository:
         )
 
     def update_question(self, question: Question, fields: dict) -> Question:
+        if "correct_option" in fields:
+            raw_value = fields["correct_option"]
+            try:
+                normalized_option = int(raw_value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "correct_option must be an integer between 1 and 4"
+                ) from exc
+
+            if normalized_option not in {1, 2, 3, 4}:
+                raise ValueError(
+                    "correct_option must be an integer between 1 and 4"
+                )
+
+            fields["correct_option"] = normalized_option
+
         for key, value in fields.items():
             setattr(question, key, value)
 
