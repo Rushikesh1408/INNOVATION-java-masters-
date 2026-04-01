@@ -13,14 +13,28 @@ def get_current_admin(
     credentials: HTTPAuthorizationCredentials = Depends(bearer),
     db: Session = Depends(get_db),
 ) -> Admin:
-    payload = decode_token(credentials.credentials)
+    try:
+        payload = decode_token(credentials.credentials)
+    except ValueError as exc:
+        message = str(exc)
+        detail = "Token has expired" if message == "Token expired" else "Invalid token"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
     if payload.get("role") != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
 
     username = payload.get("sub")
     admin = db.query(Admin).filter(Admin.username == username).first()
     if not admin:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return admin
 
 
