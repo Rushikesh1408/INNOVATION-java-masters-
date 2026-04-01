@@ -53,6 +53,10 @@ class ContestantRepository:
         ip_address: str,
         device_info: str,
     ) -> ExamSession:
+        existing = self.get_active_session(user_id, exam_id)
+        if existing:
+            raise ValueError("Active session already exists")
+
         exam_session = ExamSession(
             user_id=user_id,
             exam_id=exam_id,
@@ -66,7 +70,10 @@ class ContestantRepository:
             return exam_session
         except IntegrityError as exc:
             self.db.rollback()
-            raise ValueError("Active session already exists") from exc
+            raise ValueError(
+                "Session creation failed due to constraint violation: "
+                f"{exc}"
+            ) from exc
 
     def get_session(self, session_id) -> ExamSession | None:
         return (

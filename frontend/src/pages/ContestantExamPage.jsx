@@ -67,17 +67,25 @@ export default function ContestantExamPage() {
           <h3>Registration</h3>
           <input
             value={formState.name}
-            onChange={(event) =>
-              setFormState((current) => ({ ...current, name: event.target.value }))
-            }
+            onChange={(event) => {
+              setRegisteredUserId(null);
+              setFormState((current) => ({
+                ...current,
+                name: event.target.value,
+              }));
+            }}
             placeholder="Full name"
             required
           />
           <input
             value={formState.email}
-            onChange={(event) =>
-              setFormState((current) => ({ ...current, email: event.target.value }))
-            }
+            onChange={(event) => {
+              setRegisteredUserId(null);
+              setFormState((current) => ({
+                ...current,
+                email: event.target.value,
+              }));
+            }}
             placeholder="Email"
             type="email"
             required

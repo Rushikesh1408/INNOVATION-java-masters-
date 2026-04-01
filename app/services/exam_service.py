@@ -74,14 +74,16 @@ class ExamService:
         return self.repo.list_questions(exam_id)
 
     def update_question(self, exam_id: int, question_id: int, fields: dict):
-        if (
-            "correct_option" in fields
-            and fields["correct_option"] not in {1, 2, 3, 4}
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="correct_option must be between 1 and 4",
-            )
+        if "correct_option" in fields:
+            correct_option = fields["correct_option"]
+            if (
+                type(correct_option) is not int
+                or correct_option not in {1, 2, 3, 4}
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="correct_option must be between 1 and 4",
+                )
 
         question = self.repo.get_question(exam_id, question_id)
         if not question:
