@@ -9,8 +9,12 @@ class AuthService:
     def __init__(self, db: Session):
         self.repo = AdminRepository(db)
 
-    def admin_login(self, username: str, password: str) -> str:
+    def admin_login(self, username: str, password: str) -> tuple[str, int]:
         admin = self.repo.get_by_username(username)
         if not admin or not verify_password(password, admin.password_hash):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         return create_admin_access_token(username)
