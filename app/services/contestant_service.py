@@ -28,14 +28,19 @@ class ContestantService:
                 detail="Exam not found",
             )
 
-        active = self.repo.get_active_session(user_id, exam_id)
-        if active:
+        try:
+            exam_session = self.repo.create_session(
+                user_id,
+                exam_id,
+                ip_address,
+                device_info,
+            )
+        except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Active session already exists",
-            )
+            ) from exc
 
-        exam_session = self.repo.create_session(user_id, exam_id, ip_address, device_info)
         return exam_session, exam
 
     def submit_answer(
@@ -51,11 +56,12 @@ class ContestantService:
 
         if time_taken < SUSPICIOUS_TIME_THRESHOLD_MS:
             exam_session.flagged = True
+            self.repo.db.flush()
 
         return self.repo.save_response(session_id, question_id, selected_option, time_taken)
 
     def ingest_monitoring_event(self, session_id: UUID, event_type: str):
-        exam_session = self.repo.get_session(session_id)
+        exam_session = self.repo.get_session_for_update(session_id)
         if not exam_session or exam_session.status != "active":
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session unavailable")
 

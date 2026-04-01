@@ -17,7 +17,12 @@ def create_exam(
     db: Session = Depends(get_db),
     admin: Admin = Depends(get_current_admin),
 ):
-    return ExamService(db).create_exam(payload.title, payload.time_limit, payload.rules, admin.id)
+    return ExamService(db).create_exam(
+        payload.title,
+        payload.time_limit,
+        payload.rules,
+        admin.id,
+    )
 
 
 @router.get("", response_model=list[ExamResponse])
@@ -33,9 +38,22 @@ def add_question(
     admin: Admin = Depends(get_current_admin),
 ):
     _ = admin
-    return ExamService(db).add_question(exam_id, payload.question_text, payload.options, payload.correct_option)
+    return ExamService(db).add_question(
+        exam_id=exam_id,
+        question_text=payload.question_text,
+        option_1=payload.option_1,
+        option_2=payload.option_2,
+        option_3=payload.option_3,
+        option_4=payload.option_4,
+        correct_option=payload.correct_option,
+    )
 
 
 @router.get("/{exam_id}/questions", response_model=list[QuestionResponse])
-def list_questions(exam_id: int, db: Session = Depends(get_db)):
+def list_questions(
+    exam_id: int,
+    db: Session = Depends(get_db),
+    admin: Admin = Depends(get_current_admin),
+):
+    _ = admin
     return ExamService(db).list_questions(exam_id)

@@ -1,4 +1,6 @@
-# Java Masters Exam Engine
+# Masters Exam Engine
+
+"Java" in this project name refers to exam content/domain, not the implementation language.
 
 Scalable full-stack online examination platform with:
 
@@ -137,7 +139,7 @@ Tables implemented:
 - `admins(id, username, password_hash)`
 - `users(id, name, email unique)`
 - `exams(id, title, time_limit, rules, created_by)`
-- `questions(id, exam_id, question_text, options, correct_option)`
+- `questions(id, exam_id, question_text, option_1, option_2, option_3, option_4, correct_option)`
 - `sessions(id UUID, user_id, exam_id, start_time, end_time, ip_address, device_info, status, warning_count, flagged)`
 - `responses(id, session_id, question_id, selected_option, time_taken)`
 - `results(id, user_id, exam_id, score, accuracy, total_time, flagged)`
@@ -149,13 +151,7 @@ Indexes included for session lookup, response uniqueness per question, and leade
 ### Backend
 
 1. Create `.env` from `.env.example`.
-2. Ensure PostgreSQL URL is configured:
-
-```env
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/exam_engine
-```
-
-3. Install dependencies:
+2. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -164,6 +160,8 @@ pip install -r requirements.txt
 4. Seed admin user:
 
 ```bash
+set ADMIN_USERNAME=admin
+set ADMIN_PASSWORD=replace-with-secure-password
 python scripts/seed_admin.py
 ```
 

@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
@@ -23,4 +25,14 @@ def seed_admin(username: str, password: str) -> None:
 
 
 if __name__ == "__main__":
-    seed_admin("admin", "Admin@12345")
+    # Configure admin seed credentials via environment variables.
+    admin_username = os.getenv("ADMIN_USERNAME", "admin")
+    admin_password = os.getenv("ADMIN_PASSWORD", "").strip()
+
+    if not admin_password:
+        raise SystemExit(
+            "ADMIN_PASSWORD environment variable is required and cannot be "
+            "empty."
+        )
+
+    seed_admin(admin_username, admin_password)

@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.response import Response
@@ -34,13 +35,25 @@ class ContestantRepository:
             ip_address=ip_address,
             device_info=device_info,
         )
-        self.db.add(exam_session)
-        self.db.commit()
-        self.db.refresh(exam_session)
-        return exam_session
+        try:
+            self.db.add(exam_session)
+            self.db.commit()
+            self.db.refresh(exam_session)
+            return exam_session
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise ValueError("Active session already exists") from exc
 
     def get_session(self, session_id) -> ExamSession | None:
         return self.db.query(ExamSession).filter(ExamSession.id == session_id).first()
+
+    def get_session_for_update(self, session_id) -> ExamSession | None:
+        return (
+            self.db.query(ExamSession)
+            .filter(ExamSession.id == session_id)
+            .with_for_update()
+            .first()
+        )
 
     def save_response(self, session_id, question_id: int, selected_option: int, time_taken: int) -> Response:
         response = (
