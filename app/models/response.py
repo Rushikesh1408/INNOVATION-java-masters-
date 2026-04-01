@@ -18,7 +18,7 @@ class Response(Base):
             unique=True,
         ),
         CheckConstraint(
-            "selected_option BETWEEN 1 AND 4",
+            "selected_option IS NULL OR selected_option BETWEEN 1 AND 4",
             name="ck_responses_selected_option_range",
         ),
     )
@@ -35,7 +35,7 @@ class Response(Base):
         nullable=False,
         index=True,
     )
-    selected_option: Mapped[int] = mapped_column(Integer, nullable=False)
+    selected_option: Mapped[int | None] = mapped_column(Integer, nullable=True)
     time_taken: Mapped[int] = mapped_column(Integer, nullable=False)
     answered_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

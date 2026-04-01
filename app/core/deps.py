@@ -18,30 +18,30 @@ def get_current_admin(
     try:
         payload = decode_token(credentials.credentials)
     except ValueError as exc:
-<<<<<<< HEAD
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-        ) from exc
-
-    if not payload or not isinstance(payload, Mapping):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
-        )
-
-=======
         message = str(exc)
-        detail = "Token has expired" if message == "Token expired" else "Invalid token"
+        detail = (
+            "Token has expired"
+            if message == "Token expired"
+            else "Invalid token"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
->>>>>>> 055f788b5d01bc147a13a62a8fdbb51aea169464
+    if not payload or not isinstance(payload, Mapping):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if payload.get("role") != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized",
+        )
 
     username = payload.get("sub")
     if not username:
