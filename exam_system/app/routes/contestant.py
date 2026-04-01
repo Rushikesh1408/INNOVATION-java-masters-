@@ -196,7 +196,7 @@ def submit_test():
     session.pop('current_attempt_id', None)
     session.pop('current_test_id', None)
     session['last_score'] = score
-    return redirect(url_for('contestant.thank_you'))
+    return jsonify({'success': True})
 
 @contestant_bp.route('/thank-you')
 def thank_you():
