@@ -26,10 +26,25 @@ def register(payload: ContestantRegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/start-exam", response_model=StartExamResponse)
 def start_exam(payload: StartExamRequest, request: Request, db: Session = Depends(get_db)):
+    # x-forwarded-for is user-controlled unless traffic is behind a trusted proxy.
     forwarded_for = request.headers.get("x-forwarded-for")
-    ip_address = forwarded_for.split(",")[0].strip() if forwarded_for else request.client.host
+    ip_address = "unknown"
+    if forwarded_for:
+        ip_address = forwarded_for.split(",")[0].strip() or "unknown"
+    elif request.client is not None and request.client.host:
+        ip_address = request.client.host
+    else:
+        scope_client = request.scope.get("client")
+        if isinstance(scope_client, tuple) and len(scope_client) > 0:
+            ip_address = str(scope_client[0])
+
     user_agent = request.headers.get("user-agent", "unknown")
-    exam_session, exam = ContestantService(db).start_exam(payload.user_id, payload.exam_id, ip_address, user_agent)
+    exam_session, exam = ContestantService(db).start_exam(
+        payload.user_id,
+        payload.exam_id,
+        ip_address,
+        user_agent,
+    )
     return StartExamResponse(session_id=exam_session.id, exam_id=exam.id, time_limit=exam.time_limit)
 
 

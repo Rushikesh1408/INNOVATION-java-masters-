@@ -1,10 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ExamCreateRequest(BaseModel):
     title: str = Field(min_length=3, max_length=255)
     time_limit: int = Field(gt=0, le=300)
-    rules: str | None = None
+    rules: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("title")
+    @classmethod
+    def validate_title_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("title must contain at least one non-whitespace character")
+        return value
 
 
 class ExamResponse(BaseModel):

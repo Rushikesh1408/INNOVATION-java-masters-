@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "../api/client";
 
 export default function AdminDashboardPage() {
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(() => localStorage.getItem("admin_token") || "");
   const [exams, setExams] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    apiRequest("/exams")
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+    apiRequest("/exams", { headers })
       .then(setExams)
       .catch(() => setExams([]));
-  }, []);
+  }, [token]);
 
   const login = async (event) => {
     event.preventDefault();
@@ -26,6 +28,7 @@ export default function AdminDashboardPage() {
           password: formData.get("password"),
         }),
       });
+      localStorage.setItem("admin_token", response.access_token);
       setToken(response.access_token);
     } catch {
       setError("Login failed");
@@ -44,7 +47,7 @@ export default function AdminDashboardPage() {
           Sign In
         </button>
         {error && <p className="error">{error}</p>}
-        {token && <p className="success">JWT issued.</p>}
+        {token && <p className="success">Authenticated as admin.</p>}
       </form>
 
       <article className="card">

@@ -5,6 +5,8 @@ import { useAntiCheat } from "../hooks/useAntiCheat";
 
 export default function ContestantExamPage() {
   const [sessionId, setSessionId] = useState("");
+  const [registeredUserId, setRegisteredUserId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [formState, setFormState] = useState({
     name: "",
@@ -12,25 +14,37 @@ export default function ContestantExamPage() {
     examId: "1",
   });
 
-  const { warnings } = useAntiCheat(sessionId);
+  const { warnings, requestFullscreenFromGesture } = useAntiCheat(sessionId);
 
   const startExam = async (event) => {
     event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
     setFormError("");
 
     try {
-      const user = await apiRequest("/contestants/register", {
-        method: "POST",
-        body: JSON.stringify({
-          name: formState.name,
-          email: formState.email,
-        }),
-      });
+      await requestFullscreenFromGesture();
+
+      let userId = registeredUserId;
+      if (!userId) {
+        const user = await apiRequest("/contestants/register", {
+          method: "POST",
+          body: JSON.stringify({
+            name: formState.name,
+            email: formState.email,
+          }),
+        });
+        userId = user.id;
+        setRegisteredUserId(user.id);
+      }
 
       const started = await apiRequest("/contestants/start-exam", {
         method: "POST",
         body: JSON.stringify({
-          user_id: user.id,
+          user_id: userId,
           exam_id: Number(formState.examId),
         }),
       });
@@ -38,6 +52,8 @@ export default function ContestantExamPage() {
       setSessionId(started.session_id);
     } catch {
       setFormError("Unable to start exam.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -74,8 +90,8 @@ export default function ContestantExamPage() {
             placeholder="Exam ID"
             required
           />
-          <button className="button" type="submit">
-            Start Exam
+          <button className="button" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Starting..." : "Start Exam"}
           </button>
           {formError && <p className="error">{formError}</p>}
         </form>

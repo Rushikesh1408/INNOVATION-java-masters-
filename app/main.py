@@ -12,6 +12,12 @@ from app.db.init_db import create_tables
 settings = get_settings()
 limiter = Limiter(key_func=get_remote_address)
 
+if "*" in settings.cors_origins:
+    raise ValueError(
+        "CORS origins cannot contain '*' when allow_credentials=True. "
+        "Set explicit ALLOWED_ORIGINS.",
+    )
+
 app = FastAPI(title=settings.app_name)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

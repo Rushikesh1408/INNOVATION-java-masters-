@@ -13,7 +13,21 @@ class Exam(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     time_limit: Mapped[int] = mapped_column(Integer, nullable=False)
     rules: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey("admins.id"), nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_by: Mapped[int] = mapped_column(
+        ForeignKey("admins.id"),
+        nullable=False,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+    )
 
-    questions = relationship("Question", back_populates="exam", cascade="all, delete-orphan")
+    admin = relationship("Admin", back_populates="exams")
+    questions = relationship(
+        "Question",
+        back_populates="exam",
+        cascade="all, delete-orphan",
+    )
+    sessions = relationship("Session", back_populates="exam")
+    results = relationship("Result", back_populates="exam")

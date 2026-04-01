@@ -7,6 +7,24 @@ export function useAntiCheat(sessionId) {
   const warnedRef = useRef(false);
 
   useEffect(() => {
+    warnedRef.current = false;
+  }, [sessionId]);
+
+  const requestFullscreenFromGesture = async () => {
+    if (document.fullscreenElement) {
+      return true;
+    }
+
+    try {
+      await document.documentElement.requestFullscreen();
+      return true;
+    } catch (error) {
+      console.warn("Fullscreen request failed; continuing with telemetry only.", error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
     if (!sessionId) {
       return;
     }
@@ -19,12 +37,6 @@ export function useAntiCheat(sessionId) {
         });
       } catch {
         // Keep exam flow running if telemetry post fails.
-      }
-    };
-
-    const enforceFullscreen = async () => {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
       }
     };
 
@@ -48,12 +60,12 @@ export function useAntiCheat(sessionId) {
     };
 
     const blockClipboardShortcuts = (event) => {
-      if (event.ctrlKey && ["c", "v", "x", "u", "i"].includes(event.key.toLowerCase())) {
+      const shortcutPressed = event.ctrlKey || event.metaKey;
+      if (shortcutPressed && ["c", "v", "x", "u", "i"].includes(event.key.toLowerCase())) {
         event.preventDefault();
       }
     };
 
-    enforceFullscreen();
     document.addEventListener("visibilitychange", onVisibilityChange);
     document.addEventListener("fullscreenchange", onFullscreenChange);
     document.addEventListener("contextmenu", blockContextMenu);
@@ -67,5 +79,8 @@ export function useAntiCheat(sessionId) {
     };
   }, [sessionId]);
 
-  return { warnings };
+  return {
+    warnings,
+    requestFullscreenFromGesture,
+  };
 }
