@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { apiRequest } from "../api/client";
 import { useAntiCheat } from "../hooks/useAntiCheat";
@@ -7,14 +7,41 @@ export default function ContestantExamPage() {
   const [sessionId, setSessionId] = useState("");
   const [registeredUserId, setRegisteredUserId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [examStatusMessage, setExamStatusMessage] = useState("");
   const [formState, setFormState] = useState({
     name: "",
     email: "",
     examId: "1",
   });
 
-  const { warnings, requestFullscreenFromGesture } = useAntiCheat(sessionId);
+  const autoSubmitExam = useCallback(
+    async (reason) => {
+      if (!sessionId || isAutoSubmitting) {
+        return;
+      }
+
+      setIsAutoSubmitting(true);
+      try {
+        await apiRequest(`/contestants/finish/${sessionId}`, {
+          method: "POST",
+        });
+        setExamStatusMessage(`Exam auto-submitted due to ${reason}.`);
+        setSessionId("");
+      } catch {
+        setExamStatusMessage("Auto-submit failed. Please submit manually.");
+      } finally {
+        setIsAutoSubmitting(false);
+      }
+    },
+    [sessionId, isAutoSubmitting, setExamStatusMessage, setIsAutoSubmitting, setSessionId],
+  );
+
+  const { warnings, lastEvent, requestFullscreenFromGesture } = useAntiCheat(
+    sessionId,
+    autoSubmitExam,
+  );
 
   const startExam = async (event) => {
     event.preventDefault();
@@ -44,12 +71,14 @@ export default function ContestantExamPage() {
       const started = await apiRequest("/contestants/start-exam", {
         method: "POST",
         body: JSON.stringify({
-          user_id: userId,
+          name: formState.name,
+          email: formState.email,
           exam_id: Number(formState.examId),
         }),
       });
 
       setSessionId(started.session_id);
+      setExamStatusMessage("Exam started in protected mode.");
     } catch {
       setFormError("Unable to start exam.");
     } finally {
@@ -61,6 +90,9 @@ export default function ContestantExamPage() {
     <section className="stack">
       <h2>Contestant Exam Interface</h2>
       <p>Warnings: {warnings}</p>
+      {Number(warnings) > 0 && <p className="error">Warning: suspicious activity detected.</p>}
+      {lastEvent && <p>Last Event: {lastEvent}</p>}
+      {examStatusMessage && <p>{examStatusMessage}</p>}
 
       {!sessionId ? (
         <form className="card" onSubmit={startExam}>
@@ -107,6 +139,7 @@ export default function ContestantExamPage() {
         <article className="card">
           <h3>Exam In Progress</h3>
           <p>Session: {sessionId}</p>
+          {isAutoSubmitting && <p>Auto-submitting exam...</p>}
           <p>Timer and question navigator should be rendered here.</p>
         </article>
       )}
