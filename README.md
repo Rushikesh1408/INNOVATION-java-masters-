@@ -30,12 +30,15 @@ Scalable full-stack online examination platform with:
 
 ```text
 app/
+	database.py
 	api/
 		router.py
 		routes/
 			auth.py
 			exams.py
 			contestants.py
+	routes/
+		exam_routes.py
 	core/
 		config.py
 		deps.py
@@ -67,6 +70,8 @@ app/
 		auth_service.py
 		exam_service.py
 		contestant_service.py
+	utils/
+		settings.py
 	main.py
 scripts/
 	seed_admin.py
@@ -146,33 +151,13 @@ Indexes included for session lookup, response uniqueness per question, and leade
 ### Backend
 
 1. Create `.env` from `.env.example`.
-2. Required environment variables in `.env`:
-
-- `DATABASE_URL`: PostgreSQL SQLAlchemy connection string.
-- `JWT_SECRET_KEY`: Conceptual name for your JWT signing secret. In this codebase use `ADMIN_JWT_SECRET`.
-- `JWT_ALGORITHM`: Conceptual JWT algorithm key. In this codebase use `ADMIN_JWT_ALGORITHM`.
-- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`: Conceptual token expiry key. In this codebase use `ADMIN_JWT_EXPIRE_MINUTES`.
-- `CORS_ORIGINS`: Conceptual CORS allowlist key. In this codebase use `ALLOWED_ORIGINS` as a comma-separated list.
-- `ADMIN_USERNAME`: Username used by `python scripts/seed_admin.py` (defaults to `admin` if omitted).
-- `ADMIN_PASSWORD`: Password used by `python scripts/seed_admin.py` (required).
-
-Current backend settings names expected by the app are:
-
-- `APP_NAME`
-- `API_PREFIX`
-- `DATABASE_URL`
-- `ADMIN_JWT_SECRET`
-- `ADMIN_JWT_ALGORITHM`
-- `ADMIN_JWT_EXPIRE_MINUTES`
-- `ALLOWED_ORIGINS`
-
-3. Install dependencies:
+2. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Seed admin user:
+4. Seed admin user:
 
 ```bash
 set ADMIN_USERNAME=admin
@@ -180,7 +165,7 @@ set ADMIN_PASSWORD=replace-with-secure-password
 python scripts/seed_admin.py
 ```
 
-4. Run API:
+5. Run API with uvicorn:
 
 ```bash
 uvicorn app.main:app --reload

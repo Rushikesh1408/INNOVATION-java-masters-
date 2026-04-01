@@ -9,3 +9,9 @@ class AdminLoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str = Field(min_length=1)
     token_type: str = "bearer"
+    expires_in: int
+
+
+class AdminProfileResponse(BaseModel):
+    id: int
+    username: str

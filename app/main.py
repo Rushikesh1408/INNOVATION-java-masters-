@@ -8,6 +8,7 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.logging_middleware import RequestAuditMiddleware
 from app.db.init_db import create_tables
+from app.routes import exam_router
 
 settings = get_settings()
 limiter = Limiter(key_func=get_remote_address)
@@ -43,3 +44,4 @@ def health_check():
 
 
 app.include_router(api_router, prefix=settings.api_prefix)
+app.include_router(exam_router, prefix=settings.api_prefix)
