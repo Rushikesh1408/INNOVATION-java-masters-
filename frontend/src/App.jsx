@@ -5,6 +5,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import ContestantFormPage from "./pages/ContestantFormPage";
 import ExamPage from "./pages/ExamPage";
 import HomePage from "./pages/HomePage";
+import NotFoundPage from "./pages/NotFoundPage";
 import ResultPage from "./pages/ResultPage";
 import RulesPage from "./pages/RulesPage";
 
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/contestant/rules" element={<RulesPage />} />
           <Route path="/contestant/exam" element={<ExamPage />} />
           <Route path="/contestant/result" element={<ResultPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
     </div>

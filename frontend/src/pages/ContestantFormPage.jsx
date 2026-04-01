@@ -4,12 +4,30 @@ import { useNavigate } from "react-router-dom";
 export default function ContestantFormPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", examId: "1" });
+  const [formError, setFormError] = useState("");
 
   const proceedToRules = (event) => {
     event.preventDefault();
 
-    localStorage.setItem("contestant_form", JSON.stringify(form));
-    navigate("/contestant/rules");
+    const normalizedForm = Object.fromEntries(
+      Object.entries(form).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value])
+    );
+
+    if (!normalizedForm.name || !normalizedForm.email || !normalizedForm.examId) {
+      setFormError("Please fill in all fields.");
+      return;
+    }
+
+    setForm(normalizedForm);
+    setFormError("");
+
+    try {
+      localStorage.setItem("contestant_form", JSON.stringify(normalizedForm));
+      navigate("/contestant/rules");
+    } catch (error) {
+      console.error("Failed to store contestant form", error);
+      setFormError("Unable to save your details in this browser. Please try again.");
+    }
   };
 
   return (
@@ -55,6 +73,7 @@ export default function ContestantFormPage() {
         >
           Continue to Rules
         </button>
+        {formError ? <p className="sm:col-span-2 text-sm text-rose-700">{formError}</p> : null}
       </form>
     </section>
   );
