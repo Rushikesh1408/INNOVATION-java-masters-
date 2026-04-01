@@ -48,6 +48,7 @@ def get_current_admin(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token subject",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     admin = db.query(Admin).filter(Admin.username == username).first()

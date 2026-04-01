@@ -11,6 +11,7 @@ from app.repositories.exam_repository import ExamRepository
 
 SUSPICIOUS_TIME_THRESHOLD_MS = 2000
 AUTO_SUBMIT_WARNING_THRESHOLD = 2
+FAST_ANSWER_FLAG_COUNT_THRESHOLD = 3
 
 
 class ContestantService:
@@ -111,6 +112,12 @@ class ContestantService:
                 ),
             )
 
+        if time_taken < 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="time_taken must be non-negative",
+            )
+
         if time_taken < SUSPICIOUS_TIME_THRESHOLD_MS:
             exam_session.flagged = True
             self.repo.db.flush()
@@ -165,8 +172,15 @@ class ContestantService:
 
         correct = 0
         total_time = 0
+        fast_answer_count = 0
+        answered_count = 0
         for response in responses:
             total_time += response.time_taken
+            if response.selected_option is not None:
+                answered_count += 1
+            if response.time_taken < SUSPICIOUS_TIME_THRESHOLD_MS:
+                fast_answer_count += 1
+
             question = question_map.get(response.question_id)
             if (
                 question
@@ -176,13 +190,29 @@ class ContestantService:
 
         total_questions = max(len(questions), 1)
         accuracy = (correct / total_questions) * 100
+        suspicious_fast_pattern = (
+            fast_answer_count >= FAST_ANSWER_FLAG_COUNT_THRESHOLD
+        )
+        suspicious_avg_speed = (
+            answered_count > 0
+            and (total_time / answered_count) < SUSPICIOUS_TIME_THRESHOLD_MS
+        )
+        skipped_all_questions = answered_count == 0
+        flagged = (
+            exam_session.flagged
+            or suspicious_fast_pattern
+            or suspicious_avg_speed
+            or skipped_all_questions
+        )
+
+        exam_session.flagged = flagged
         result = self.repo.upsert_result(
             user_id=exam_session.user_id,
             exam_id=exam_session.exam_id,
             score=correct,
             accuracy=accuracy,
             total_time=total_time,
-            flagged=exam_session.flagged,
+            flagged=flagged,
         )
 
         self.repo.db.commit()
