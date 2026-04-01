@@ -21,14 +21,38 @@ class ContestantRepository:
         self.db.refresh(user)
         return user
 
-    def get_active_session(self, user_id: int, exam_id: int) -> ExamSession | None:
+    def get_active_session(
+        self,
+        user_id: int,
+        exam_id: int,
+    ) -> ExamSession | None:
         return (
             self.db.query(ExamSession)
-            .filter(ExamSession.user_id == user_id, ExamSession.exam_id == exam_id, ExamSession.status == "active")
+            .filter(
+                ExamSession.user_id == user_id,
+                ExamSession.exam_id == exam_id,
+                ExamSession.status == "active",
+            )
             .first()
         )
 
-    def create_session(self, user_id: int, exam_id: int, ip_address: str, device_info: str) -> ExamSession:
+    def get_active_session_for_user(self, user_id: int) -> ExamSession | None:
+        return (
+            self.db.query(ExamSession)
+            .filter(
+                ExamSession.user_id == user_id,
+                ExamSession.status == "active",
+            )
+            .first()
+        )
+
+    def create_session(
+        self,
+        user_id: int,
+        exam_id: int,
+        ip_address: str,
+        device_info: str,
+    ) -> ExamSession:
         exam_session = ExamSession(
             user_id=user_id,
             exam_id=exam_id,
@@ -45,7 +69,11 @@ class ContestantRepository:
             raise ValueError("Active session already exists") from exc
 
     def get_session(self, session_id) -> ExamSession | None:
-        return self.db.query(ExamSession).filter(ExamSession.id == session_id).first()
+        return (
+            self.db.query(ExamSession)
+            .filter(ExamSession.id == session_id)
+            .first()
+        )
 
     def get_session_for_update(self, session_id) -> ExamSession | None:
         return (
@@ -55,33 +83,57 @@ class ContestantRepository:
             .first()
         )
 
-    def save_response(self, session_id, question_id: int, selected_option: int, time_taken: int) -> Response:
+    def save_response(
+        self,
+        session_id,
+        question_id: int,
+        selected_option: int | None,
+        time_taken: int,
+    ) -> Response:
         response = (
             self.db.query(Response)
-            .filter(Response.session_id == session_id, Response.question_id == question_id)
+            .filter(
+                Response.session_id == session_id,
+                Response.question_id == question_id,
+            )
             .first()
         )
         if response:
-            response.selected_option = selected_option
-            response.time_taken = time_taken
-        else:
-            response = Response(
-                session_id=session_id,
-                question_id=question_id,
-                selected_option=selected_option,
-                time_taken=time_taken,
-            )
-            self.db.add(response)
+            raise ValueError("Answer for this question already submitted")
+
+        response = Response(
+            session_id=session_id,
+            question_id=question_id,
+            selected_option=selected_option,
+            time_taken=time_taken,
+        )
+        self.db.add(response)
 
         self.db.commit()
         self.db.refresh(response)
         return response
 
     def list_responses(self, session_id) -> list[Response]:
-        return self.db.query(Response).filter(Response.session_id == session_id).all()
+        return (
+            self.db.query(Response)
+            .filter(Response.session_id == session_id)
+            .all()
+        )
 
-    def upsert_result(self, user_id: int, exam_id: int, score: int, accuracy: float, total_time: int, flagged: bool) -> Result:
-        result = self.db.query(Result).filter(Result.user_id == user_id, Result.exam_id == exam_id).first()
+    def upsert_result(
+        self,
+        user_id: int,
+        exam_id: int,
+        score: int,
+        accuracy: float,
+        total_time: int,
+        flagged: bool,
+    ) -> Result:
+        result = (
+            self.db.query(Result)
+            .filter(Result.user_id == user_id, Result.exam_id == exam_id)
+            .first()
+        )
         if result:
             result.score = score
             result.accuracy = accuracy

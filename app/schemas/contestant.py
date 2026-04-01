@@ -19,19 +19,32 @@ class ContestantResponse(BaseModel):
 
 class StartExamRequest(BaseModel):
     exam_id: int
-    user_id: int
+    name: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+
+
+class SessionQuestionOption(BaseModel):
+    option_id: int = Field(ge=1, le=4)
+    text: str
+
+
+class SessionQuestion(BaseModel):
+    question_id: int
+    question_text: str
+    options: list[SessionQuestionOption]
 
 
 class StartExamResponse(BaseModel):
     session_id: UUID
     exam_id: int
     time_limit: int
+    questions: list[SessionQuestion]
 
 
 class AnswerSubmitRequest(BaseModel):
     session_id: UUID
     question_id: int
-    selected_option: int = Field(ge=1, le=4)
+    selected_option: int | None = Field(default=None, ge=1, le=4)
     time_taken: int = Field(ge=0, le=3600000)
 
 

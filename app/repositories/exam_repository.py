@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.exam import Exam
 from app.models.question import Question
@@ -32,6 +32,14 @@ class ExamRepository:
     def get_exam(self, exam_id: int) -> Exam | None:
         return self.db.query(Exam).filter(Exam.id == exam_id).first()
 
+    def get_exam_with_questions(self, exam_id: int) -> Exam | None:
+        return (
+            self.db.query(Exam)
+            .options(selectinload(Exam.questions))
+            .filter(Exam.id == exam_id)
+            .first()
+        )
+
     def add_question(
         self,
         exam_id: int,
@@ -42,8 +50,13 @@ class ExamRepository:
         option_4: str,
         correct_option: int,
     ) -> Question:
-        if not isinstance(correct_option, int) or correct_option not in {1, 2, 3, 4}:
-            raise ValueError("correct_option must be an integer between 1 and 4")
+        if (
+            not isinstance(correct_option, int)
+            or correct_option not in {1, 2, 3, 4}
+        ):
+            raise ValueError(
+                "correct_option must be an integer between 1 and 4"
+            )
 
         question = Question(
             exam_id=exam_id,
@@ -66,3 +79,22 @@ class ExamRepository:
             .order_by(Question.id.asc())
             .all()
         )
+
+    def get_question(self, exam_id: int, question_id: int) -> Question | None:
+        return (
+            self.db.query(Question)
+            .filter(Question.exam_id == exam_id, Question.id == question_id)
+            .first()
+        )
+
+    def update_question(self, question: Question, fields: dict) -> Question:
+        for key, value in fields.items():
+            setattr(question, key, value)
+
+        self.db.commit()
+        self.db.refresh(question)
+        return question
+
+    def delete_question(self, question: Question) -> None:
+        self.db.delete(question)
+        self.db.commit()

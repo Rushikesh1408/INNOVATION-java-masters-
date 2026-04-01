@@ -1,11 +1,19 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_admin
 from app.db.session import get_db
 from app.models.admin import Admin
-from app.schemas.exam import ExamCreateRequest, ExamResponse
-from app.schemas.question import QuestionCreateRequest, QuestionResponse
+from app.schemas.exam import (
+    ExamCreateRequest,
+    ExamResponse,
+    ExamWithQuestionsResponse,
+)
+from app.schemas.question import (
+    QuestionAdminResponse,
+    QuestionCreateRequest,
+    QuestionUpdateRequest,
+)
 from app.services.exam_service import ExamService
 
 router = APIRouter(prefix="/exams", tags=["exams"])
@@ -30,7 +38,17 @@ def list_exams(db: Session = Depends(get_db)):
     return ExamService(db).list_exams()
 
 
-@router.post("/{exam_id}/questions", response_model=QuestionResponse)
+@router.get("/{exam_id}", response_model=ExamWithQuestionsResponse)
+def get_exam_with_questions(
+    exam_id: int,
+    db: Session = Depends(get_db),
+    admin: Admin = Depends(get_current_admin),
+):
+    _ = admin
+    return ExamService(db).get_exam_with_questions(exam_id)
+
+
+@router.post("/{exam_id}/questions", response_model=QuestionAdminResponse)
 def add_question(
     exam_id: int,
     payload: QuestionCreateRequest,
@@ -49,7 +67,7 @@ def add_question(
     )
 
 
-@router.get("/{exam_id}/questions", response_model=list[QuestionResponse])
+@router.get("/{exam_id}/questions", response_model=list[QuestionAdminResponse])
 def list_questions(
     exam_id: int,
     db: Session = Depends(get_db),
@@ -57,3 +75,34 @@ def list_questions(
 ):
     _ = admin
     return ExamService(db).list_questions(exam_id)
+
+
+@router.put(
+    "/{exam_id}/questions/{question_id}",
+    response_model=QuestionAdminResponse,
+)
+def update_question(
+    exam_id: int,
+    question_id: int,
+    payload: QuestionUpdateRequest,
+    db: Session = Depends(get_db),
+    admin: Admin = Depends(get_current_admin),
+):
+    _ = admin
+    update_fields = payload.model_dump(exclude_none=True)
+    return ExamService(db).update_question(exam_id, question_id, update_fields)
+
+
+@router.delete(
+    "/{exam_id}/questions/{question_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_question(
+    exam_id: int,
+    question_id: int,
+    db: Session = Depends(get_db),
+    admin: Admin = Depends(get_current_admin),
+):
+    _ = admin
+    ExamService(db).delete_question(exam_id, question_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

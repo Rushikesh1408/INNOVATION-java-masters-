@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+import random
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -20,7 +21,15 @@ class ContestantService:
     def register(self, name: str, email: str):
         return self.repo.get_or_create_user(name, email)
 
-    def start_exam(self, user_id: int, exam_id: int, ip_address: str, device_info: str):
+    def start_exam(
+        self,
+        name: str,
+        email: str,
+        exam_id: int,
+        ip_address: str,
+        device_info: str,
+    ):
+        user = self.repo.get_or_create_user(name, email)
         exam = self.exam_repo.get_exam(exam_id)
         if not exam:
             raise HTTPException(
@@ -28,9 +37,16 @@ class ContestantService:
                 detail="Exam not found",
             )
 
+        active_session = self.repo.get_active_session_for_user(user.id)
+        if active_session:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An active session already exists for this email",
+            )
+
         try:
             exam_session = self.repo.create_session(
-                user_id,
+                user.id,
                 exam_id,
                 ip_address,
                 device_info,
@@ -41,29 +57,84 @@ class ContestantService:
                 detail="Active session already exists",
             ) from exc
 
-        return exam_session, exam
+        questions = self.exam_repo.list_questions(exam_id)
+        randomized_questions = []
+        for question in questions:
+            options = [
+                {"option_id": 1, "text": question.option_1},
+                {"option_id": 2, "text": question.option_2},
+                {"option_id": 3, "text": question.option_3},
+                {"option_id": 4, "text": question.option_4},
+            ]
+            random.shuffle(options)
+            randomized_questions.append(
+                {
+                    "question_id": question.id,
+                    "question_text": question.question_text,
+                    "options": options,
+                }
+            )
+
+        random.shuffle(randomized_questions)
+        return exam_session, exam, randomized_questions
 
     def submit_answer(
         self,
         session_id: UUID,
         question_id: int,
-        selected_option: int,
+        selected_option: int | None,
         time_taken: int,
     ):
         exam_session = self.repo.get_session(session_id)
         if not exam_session or exam_session.status != "active":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session unavailable")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session unavailable",
+            )
+
+        question = self.exam_repo.get_question(
+            exam_session.exam_id,
+            question_id,
+        )
+        if not question or question.exam_id != exam_session.exam_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Question does not belong to this exam session",
+            )
+
+        if selected_option is not None and selected_option not in {1, 2, 3, 4}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "selected_option must be between 1 and 4 "
+                    "or null for skip"
+                ),
+            )
 
         if time_taken < SUSPICIOUS_TIME_THRESHOLD_MS:
             exam_session.flagged = True
             self.repo.db.flush()
 
-        return self.repo.save_response(session_id, question_id, selected_option, time_taken)
+        try:
+            return self.repo.save_response(
+                session_id,
+                question_id,
+                selected_option,
+                time_taken,
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(exc),
+            ) from exc
 
     def ingest_monitoring_event(self, session_id: UUID, event_type: str):
         exam_session = self.repo.get_session_for_update(session_id)
         if not exam_session or exam_session.status != "active":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session unavailable")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session unavailable",
+            )
 
         if event_type in {"TAB_SWITCH", "FULLSCREEN_EXIT"}:
             exam_session.warning_count += 1
@@ -79,7 +150,10 @@ class ContestantService:
     def finalize_result(self, session_id: UUID):
         exam_session = self.repo.get_session(session_id)
         if not exam_session:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found",
+            )
 
         if exam_session.status == "active":
             exam_session.status = "submitted"
@@ -94,7 +168,10 @@ class ContestantService:
         for response in responses:
             total_time += response.time_taken
             question = question_map.get(response.question_id)
-            if question and response.selected_option == question.correct_option:
+            if (
+                question
+                and response.selected_option == question.correct_option
+            ):
                 correct += 1
 
         total_questions = max(len(questions), 1)

@@ -20,6 +20,15 @@ class ExamService:
     def list_exams(self):
         return self.repo.list_exams()
 
+    def get_exam_with_questions(self, exam_id: int):
+        exam = self.repo.get_exam_with_questions(exam_id)
+        if not exam:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Exam not found",
+            )
+        return exam
+
     def add_question(
         self,
         exam_id: int,
@@ -30,7 +39,10 @@ class ExamService:
         option_4: str,
         correct_option: int,
     ):
-        if not isinstance(correct_option, int) or correct_option not in {1, 2, 3, 4}:
+        if (
+            not isinstance(correct_option, int)
+            or correct_option not in {1, 2, 3, 4}
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="correct_option must be between 1 and 4",
@@ -60,3 +72,32 @@ class ExamService:
                 detail="Exam not found",
             )
         return self.repo.list_questions(exam_id)
+
+    def update_question(self, exam_id: int, question_id: int, fields: dict):
+        if (
+            "correct_option" in fields
+            and fields["correct_option"] not in {1, 2, 3, 4}
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="correct_option must be between 1 and 4",
+            )
+
+        question = self.repo.get_question(exam_id, question_id)
+        if not question:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Question not found for this exam",
+            )
+
+        return self.repo.update_question(question, fields)
+
+    def delete_question(self, exam_id: int, question_id: int) -> None:
+        question = self.repo.get_question(exam_id, question_id)
+        if not question:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Question not found for this exam",
+            )
+
+        self.repo.delete_question(question)
