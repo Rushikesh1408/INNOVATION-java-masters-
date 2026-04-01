@@ -2,12 +2,25 @@
 
 "Java" in this project name refers to exam content/domain, not the implementation language.
 
-Scalable full-stack online examination platform with:
+Production-ready full-stack online examination platform with:
 
 - FastAPI backend (modular layered architecture)
 - React frontend (role-based UI)
 - PostgreSQL data layer (normalized schema)
+- Redis cache/session state
+- Celery worker scaffolding for heavy/async tasks
 - Anti-cheating telemetry and server-side flagging
+
+## Production Architecture
+
+```text
+Frontend (React)
+	-> Load Balancer / CDN
+	-> FastAPI API instances (stateless)
+	-> Redis (cache/session state)
+	-> PostgreSQL (system of record)
+	-> Celery workers (async/long-running jobs)
+```
 
 ## Implemented Architecture
 
@@ -34,9 +47,11 @@ app/
 	api/
 		router.py
 		routes/
+			admin_reports.py
 			auth.py
 			exams.py
 			contestants.py
+			monitoring.py
 	routes/
 		exam_routes.py
 	core/
@@ -52,6 +67,7 @@ app/
 		admin.py
 		user.py
 		exam.py
+		log.py
 		question.py
 		session.py
 		response.py
@@ -60,21 +76,31 @@ app/
 		admin_repository.py
 		exam_repository.py
 		contestant_repository.py
+		log_repository.py
 	schemas/
 		auth.py
 		exam.py
 		question.py
 		contestant.py
 		leaderboard.py
+		log.py
+		monitoring.py
 	services/
 		auth_service.py
 		exam_service.py
 		contestant_service.py
+		log_service.py
+		monitoring_service.py
+	workers/
+		celery_app.py
+		tasks.py
 	utils/
 		settings.py
 	main.py
 scripts/
 	seed_admin.py
+	run_celery_worker.py
+	docker-compose.yml
 ```
 
 ## Frontend structure
@@ -101,6 +127,9 @@ frontend/
 - Create exams.
 - Add/list MCQ questions with 4 options.
 - View exams and leaderboard.
+- Export results CSV (`/api/v1/admin/results/{exam_id}/export`).
+- View audit logs (`/api/v1/admin/audit-logs`).
+- Live monitoring snapshots + WebSocket stream (`/api/v1/admin/monitoring/*`).
 
 ### Contestant
 
@@ -108,6 +137,7 @@ frontend/
 - Start exam session with UUID tracking.
 - Submit question responses with time-per-question.
 - Finish exam and generate results.
+- Resume-friendly session state persisted in Redis cache.
 
 ### Anti-cheating
 
@@ -122,6 +152,7 @@ frontend/
 	- Suspicious fast-response flagging.
 	- IP address and device info capture.
 	- Single active session per user+exam enforced.
+	- Audit log entries for start, answer submit, monitoring events, and submission.
 
 ### Security
 
@@ -131,6 +162,7 @@ frontend/
 - Server-side validation using Pydantic.
 - Request audit middleware.
 - SlowAPI limiter integrated at app level.
+- Redis-backed leaderboard caching.
 
 ## Database schema
 
@@ -143,6 +175,7 @@ Tables implemented:
 - `sessions(id UUID, user_id, exam_id, start_time, end_time, ip_address, device_info, status, warning_count, flagged)`
 - `responses(id, session_id, question_id, selected_option, time_taken)`
 - `results(id, user_id, exam_id, score, accuracy, total_time, flagged)`
+- `logs(id, user_id nullable, action, context, timestamp)`
 
 Indexes included for session lookup, response uniqueness per question, and leaderboard sort paths.
 
@@ -157,6 +190,12 @@ Indexes included for session lookup, response uniqueness per question, and leade
 pip install -r requirements.txt
 ```
 
+3. Start infrastructure (PostgreSQL + Redis) with Docker:
+
+```bash
+docker compose up -d postgres redis
+```
+
 4. Seed admin user:
 
 ```bash
@@ -169,6 +208,12 @@ python scripts/seed_admin.py
 
 ```bash
 uvicorn app.main:app --reload
+```
+
+6. Run Celery worker (optional async workloads):
+
+```bash
+python scripts/run_celery_worker.py
 ```
 
 ### Frontend
@@ -207,8 +252,23 @@ npm run dev
 - `POST /api/v1/contestants/monitoring-event`
 - `POST /api/v1/contestants/finish/{session_id}`
 - `GET /api/v1/contestants/leaderboard/{exam_id}`
+- `GET /api/v1/admin/audit-logs?limit=100`
+- `GET /api/v1/admin/results/{exam_id}/export`
+- `GET /api/v1/admin/monitoring/active`
+- `WS  /api/v1/admin/monitoring/ws?token=<admin_jwt>`
 
-## Notes
+## Deployment Steps
 
-- This implementation is hackathon-ready and modular.
-- For production, add refresh tokens, DB migrations with Alembic, Redis-backed distributed rate limiting, and WebSocket live monitoring channels.
+1. Backend deploy (Render/Railway): set env vars from `.env.example`, enable HTTPS, attach managed PostgreSQL + Redis.
+2. Frontend deploy (Vercel/Netlify): set `VITE_API_BASE_URL` to your HTTPS backend URL.
+3. Configure `ALLOWED_ORIGINS` to exact frontend domains.
+4. Run migrations/create tables and seed admin.
+5. Configure worker process for Celery if using async tasks.
+6. Configure daily DB backups (provider snapshot + `pg_dump` cron task).
+
+## Fault Tolerance and Scaling Notes
+
+- FastAPI instances remain stateless and horizontally scalable.
+- Redis caches leaderboards and stores session state snapshots.
+- Monitoring supports WebSocket with polling fallback on frontend.
+- API supports auto-save and anti-cheat telemetry ingestion.

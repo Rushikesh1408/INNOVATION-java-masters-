@@ -13,9 +13,24 @@ class ExamService:
         title: str,
         time_limit: int,
         rules: str | None,
+        positive_mark: float,
+        negative_mark: float,
         admin_id: int,
     ):
-        return self.repo.create_exam(title, time_limit, rules, admin_id)
+        if time_limit <= 0:
+            raise ValueError("time_limit must be greater than 0")
+        if positive_mark < 0:
+            raise ValueError("positive_mark must be greater than or equal to 0")
+
+        normalized_negative_mark = abs(negative_mark)
+        return self.repo.create_exam(
+            title,
+            time_limit,
+            rules,
+            positive_mark,
+            normalized_negative_mark,
+            admin_id,
+        )
 
     def list_exams(self):
         return self.repo.list_exams()
