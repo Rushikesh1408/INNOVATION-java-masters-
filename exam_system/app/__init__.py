@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 import os
@@ -26,6 +26,10 @@ def create_app():
     from .routes.contestant import contestant_bp
     
     app.register_blueprint(admin_bp, url_prefix='/admin')
-    app.register_blueprint(contestant_bp, url_prefix='/')
+    app.register_blueprint(contestant_bp, url_prefix='/contestant')
+    
+    @app.route('/')
+    def root():
+        return redirect(url_for('contestant.home'))
     
     return app

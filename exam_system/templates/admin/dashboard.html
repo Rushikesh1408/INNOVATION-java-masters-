@@ -56,7 +56,12 @@
                     </p>
 
                     <div class="actions">
-                        <a href="{{ url_for('admin.test_details', test_id=test[0]) }}" class="btn btn-orange btn-sm">Manage</a>
+                        <form action="{{ url_for('admin.toggle_test', test_id=test[0]) }}" method="POST" style="margin: 0; display: inline-block;">
+                            <button type="submit" class="btn {{ 'btn-ghost' if not test[3] else 'btn-orange' }} btn-sm" style="min-width: 100px;">
+                                {{ '📡 GO LIVE' if not test[3] else '🛑 STOP' }}
+                            </button>
+                        </form>
+                        <a href="{{ url_for('admin.test_details', test_id=test[0]) }}" class="btn btn-ghost btn-sm">Manage</a>
                         <a href="{{ url_for('admin.leaderboard', test_id=test[0]) }}" class="btn btn-ghost btn-sm">Stats</a>
                         <button onclick="openDeleteModal({{ test[0] }}, '{{ test[1]|e }}')" class="btn btn-danger btn-sm">🗑</button>
                     </div>
