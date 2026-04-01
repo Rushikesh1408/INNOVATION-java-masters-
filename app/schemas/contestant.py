@@ -41,6 +41,19 @@ class StartExamResponse(BaseModel):
     questions: list[SessionQuestion]
 
 
+class ResumeExamRequest(BaseModel):
+    exam_id: int
+    name: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+
+
+class ResumeExamResponse(BaseModel):
+    session_id: UUID
+    exam_id: int
+    status: str
+    answered: dict[str, dict]
+
+
 class AnswerSubmitRequest(BaseModel):
     session_id: UUID
     question_id: int

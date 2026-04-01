@@ -29,6 +29,8 @@ def create_exam(
         payload.title,
         payload.time_limit,
         payload.rules,
+        payload.positive_mark,
+        payload.negative_mark,
         admin.id,
     )
 

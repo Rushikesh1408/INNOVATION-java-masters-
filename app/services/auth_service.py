@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import create_admin_access_token, verify_password
 from app.repositories.admin_repository import AdminRepository
+from app.services.log_service import LogService
 
 DUMMY_PASSWORD_HASH = (
     "$2b$12$27BQYLGjqmVvzyff6kK3HeYQ95f9w4zVj40MmCj2wDTH95P6m5Tru"
@@ -12,8 +13,9 @@ DUMMY_PASSWORD_HASH = (
 class AuthService:
     def __init__(self, db: Session):
         self.repo = AdminRepository(db)
+        self.log_service = LogService(db)
 
-    def admin_login(self, username: str, password: str) -> str:
+    def admin_login(self, username: str, password: str) -> tuple[str, int]:
         admin = self.repo.get_by_username(username)
         password_hash = admin.password_hash if admin else DUMMY_PASSWORD_HASH
         password_valid = verify_password(password, password_hash)
@@ -25,4 +27,5 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        self.log_service.write(action="ADMIN_LOGIN", context=f"username={username}")
         return create_admin_access_token(username)

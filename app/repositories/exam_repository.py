@@ -13,12 +13,16 @@ class ExamRepository:
         title: str,
         time_limit: int,
         rules: str | None,
+        positive_mark: float,
+        negative_mark: float,
         created_by: int,
     ) -> Exam:
         exam = Exam(
             title=title,
             time_limit=time_limit,
             rules=rules,
+            positive_mark=positive_mark,
+            negative_mark=negative_mark,
             created_by=created_by,
         )
         self.db.add(exam)

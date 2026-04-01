@@ -1,6 +1,6 @@
 from app.db.base import Base
 from app.db.session import engine
-from app.models import admin, exam, question, response, result, session, user  # noqa: F401
+from app.models import admin, exam, log, question, response, result, session, user  # noqa: F401
 
 
 def create_tables() -> None:

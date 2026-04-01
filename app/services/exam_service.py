@@ -13,9 +13,18 @@ class ExamService:
         title: str,
         time_limit: int,
         rules: str | None,
+        positive_mark: float,
+        negative_mark: float,
         admin_id: int,
     ):
-        return self.repo.create_exam(title, time_limit, rules, admin_id)
+        return self.repo.create_exam(
+            title,
+            time_limit,
+            rules,
+            positive_mark,
+            negative_mark,
+            admin_id,
+        )
 
     def list_exams(self):
         return self.repo.list_exams()

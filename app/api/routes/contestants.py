@@ -9,6 +9,8 @@ from app.schemas.contestant import (
     ContestantRegisterRequest,
     ContestantResponse,
     MonitoringEventRequest,
+    ResumeExamRequest,
+    ResumeExamResponse,
     ResultResponse,
     StartExamRequest,
     StartExamResponse,
@@ -61,6 +63,11 @@ def start_exam(
         time_limit=exam.time_limit,
         questions=randomized_questions,
     )
+
+
+@router.post("/resume", response_model=ResumeExamResponse)
+def resume_exam(payload: ResumeExamRequest, db: Session = Depends(get_db)):
+    return ContestantService(db).resume_exam(payload.name, payload.email, payload.exam_id)
 
 
 @router.post("/submit-answer")

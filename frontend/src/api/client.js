@@ -7,6 +7,24 @@ export const apiClient = axios.create({
   },
 });
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config || {};
+    config.__retryCount = config.__retryCount || 0;
+    const shouldRetry =
+      (!error.response || error.response.status >= 500) && config.__retryCount < 2;
+
+    if (!shouldRetry) {
+      throw error;
+    }
+
+    config.__retryCount += 1;
+    await new Promise((resolve) => setTimeout(resolve, 300 * config.__retryCount));
+    return apiClient.request(config);
+  }
+);
+
 export async function apiRequest(path, options = {}) {
   const method = options.method || "GET";
   const headers = options.headers || {};

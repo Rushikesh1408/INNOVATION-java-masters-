@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     admin_jwt_algorithm: str = "HS256"
     admin_jwt_expire_minutes: int = 60
     allowed_origins: str = "http://localhost:5173"
+    redis_url: str = "redis://localhost:6379/0"
+    celery_broker_url: str = "redis://localhost:6379/1"
+    celery_result_backend: str = "redis://localhost:6379/2"
+    leaderboard_cache_ttl_seconds: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
