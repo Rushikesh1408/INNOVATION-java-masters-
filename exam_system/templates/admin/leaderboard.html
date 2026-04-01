@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="lb-page fade-in">
+    <header class="admin-header">
+        <div>
+            <h1 class="gradient-text">LIVE LEADERBOARD</h1>
+            <p style="color: var(--muted); font-size: 0.8rem; letter-spacing: 0.2rem; text-transform: uppercase;">TEST: {{ test[1] }}</p>
+        </div>
+        <div style="display: flex; gap: 0.8rem;">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost">← Console</a>
+            <button onclick="window.location.reload()" class="btn btn-orange">Refresh Node</button>
+        </div>
+    </header>
+
+    <div class="glass slide-up" style="padding: 2rem;">
+        <table class="lb-table">
+            <thead>
+                <tr>
+                    <th width="80">Rank</th>
+                    <th>Contestant</th>
+                    <th>Email</th>
+                    <th>Score</th>
+                    <th>Time Taken</th>
+                    <th>Accuracy</th>
+                    <th>Anti-Cheat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if rankings %}
+                {% for entry in rankings %}
+                <tr class="{{ 'top-3' if loop.index <= 3 }}">
+                    <td>
+                        <div class="rank-badge rank-{{ loop.index if loop.index <= 3 else 'other' }}">
+                            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                        </div>
+                    </td>
+                    <td style="font-weight: 700;">{{ entry[0] }}</td>
+                    <td style="color: var(--muted); font-size: .8rem;">{{ entry[1] }}</td>
+                    <td><span style="color: var(--orange); font-weight: 800; font-size: 1.1rem;">{{ entry[2] }}</span></td>
+                    <td>{{ (entry[3] / 60)|round(1) }}m</td>
+                    <td>{{ ((entry[2] / total_questions) * 100)|round(0) if total_questions > 0 else 0 }}%</td>
+                    <td>
+                        {% if entry[4] > 0 %}
+                        <span class="badge badge-red">⚠️ {{ entry[4] }} Flags</span>
+                        {% else %}
+                        <span class="badge badge-green">CLEAN</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 4rem; color: var(--muted);">NO SUBMISSIONS RECORDED</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Auto refresh every 30s
+    setTimeout(() => window.location.reload(), 30000);
+</script>
+{% endblock %}

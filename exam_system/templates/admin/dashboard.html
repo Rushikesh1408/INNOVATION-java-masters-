@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="admin-page fade-in">
+    <header class="admin-header">
+        <div>
+          <h1>COMMAND CENTER</h1>
+          <p style="color: var(--muted); font-size: 0.8rem; letter-spacing: 0.2rem; text-transform: uppercase;">ADMIN: {{ admin_username }}</p>
+        </div>
+        <div style="display: flex; gap: 0.8rem;">
+            <a href="{{ url_for('contestant.home') }}" class="btn btn-ghost">Live Site</a>
+            <a href="{{ url_for('admin.logout') }}" class="btn btn-danger">Shutdown</a>
+        </div>
+    </header>
+
+    <div class="admin-grid">
+        <!-- Control Panel -->
+        <aside class="glass admin-form-card slide-up">
+            <h3>Deploy New Test</h3>
+            <form action="{{ url_for('admin.create_test') }}" method="POST">
+                <div class="field">
+                    <label>Test Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Python Advanced">
+                </div>
+                <div class="field">
+                    <label>Duration (Minutes)</label>
+                    <input type="number" name="time_limit" required value="30">
+                </div>
+                <div class="field">
+                    <label>Brief / Instructions</label>
+                    <textarea name="description" rows="5" placeholder="Operational details..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-orange btn-full">+ DEPLOY TEST</button>
+            </form>
+        </aside>
+
+        <!-- Active Nodes -->
+        <main>
+            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: .75rem; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .15em;">
+                Nodes / Tests Active ({{ tests|length }})
+            </h3>
+
+            <div class="tests-grid">
+                {% if tests %}
+                {% for test in tests %}
+                <div class="glass test-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <span class="badge {{ 'badge-green' if test[3] else 'badge-red' }}">
+                            {{ 'ONLINE' if test[3] else 'OFFLINE' }}
+                        </span>
+                        <div class="badge badge-orange">{{ test[4] or 0 }} Q</div>
+                    </div>
+                    
+                    <h4>{{ test[1] }}</h4>
+                    <p class="meta">
+                        {{ test[2] }}m duration &nbsp;•&nbsp; {{ test[5] or 0 }} subs
+                    </p>
+
+                    <div class="actions">
+                        <a href="{{ url_for('admin.test_details', test_id=test[0]) }}" class="btn btn-orange btn-sm">Manage</a>
+                        <a href="{{ url_for('admin.leaderboard', test_id=test[0]) }}" class="btn btn-ghost btn-sm">Stats</a>
+                        <button onclick="openDeleteModal({{ test[0] }}, '{{ test[1]|e }}')" class="btn btn-danger btn-sm">🗑</button>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="glass" style="grid-column: 1/-1; padding: 4rem; text-align: center; color: var(--muted);">
+                    NO ACTIVE TEST NODES FOUND
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-backdrop" id="delete-modal-box">
+    <div class="modal glass">
+        <div class="modal-icon">☢️</div>
+        <h3>Erase Test?</h3>
+        <p id="del-msg">This will permanently delete all records of this test.</p>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeDeleteModal()">Abort</button>
+            <form id="del-form" method="POST" style="margin:0;">
+                <button type="submit" class="btn btn-danger">Confirm Deletion</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openDeleteModal(id, name) {
+    document.getElementById('del-msg').innerHTML = `ARE YOU SURE? THIS WILL ERASE ALL DATA FOR: <br><strong>${name}</strong>`;
+    document.getElementById('del-form').action = `/admin/delete-test/${id}`;
+    document.getElementById('delete-modal-box').classList.add('visible');
+}
+function closeDeleteModal() {
+    document.getElementById('delete-modal-box').classList.remove('visible');
+}
+</script>
+{% endblock %}

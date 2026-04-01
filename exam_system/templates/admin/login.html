@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="auth-page fade-in">
+    <div class="auth-card glass slide-up">
+        <h1>Admin Control</h1>
+        <p class="sub">Secure access to test management engine</p>
+
+        <form action="{{ url_for('admin.login') }}" method="POST">
+            <div class="field">
+                <label>Access Key / Username</label>
+                <input type="text" name="username" required placeholder="admin">
+            </div>
+
+            <div class="field">
+                <label>Secret Passphrase</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="btn btn-orange btn-full">
+                UNLOCKED TERMINAL &nbsp;🔐
+            </button>
+        </form>
+
+        <a href="{{ url_for('contestant.home') }}" class="btn btn-ghost btn-full" style="margin-top: 1rem;">
+            ← Back to Public Site
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="ty-page fade-in">
+    <div class="ty-card glass slide-up">
+        <div class="check">✅</div>
+        <h1>Test Submitted!</h1>
+        <p>Great job! Your responses have been securely logged. Your score and performance analysis will be available soon.</p>
+        
+        <div class="glass" style="padding: 1.5rem; margin-bottom: 2rem; border-color: rgba(255,106,0,0.15);">
+            <div style="font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .5rem;">Registration Hash</div>
+            <code style="color: var(--orange-dim); font-size: .9rem;">{{ session.get('contestant_email', 'PX-TOKEN-7712') }}</code>
+        </div>
+
+        <a href="{{ url_for('contestant.home') }}" class="btn btn-orange btn-full">Return to Homepage</a>
+    </div>
+</div>
+{% endblock %}

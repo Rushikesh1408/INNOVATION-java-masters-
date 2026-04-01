@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+<!-- Admin login pill -->
+<a href="{{ url_for('admin.login') }}" class="admin-pill">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  Admin Login
+</a>
+
+<div class="auth-page">
+  <div class="auth-card glass slide-up">
+    <h1>Register for Test</h1>
+    <p class="sub">Fill in your details to begin the examination</p>
+
+    <form action="{{ url_for('contestant.register') }}" method="POST">
+      <div class="field">
+        <label>Select Test</label>
+        <select name="test_id" required>
+          <option value="" disabled selected>— Choose a test —</option>
+          {% for test in tests %}
+          <option value="{{ test[0] }}">{{ test[1] }} &nbsp;·&nbsp; {{ test[3] }} mins</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" name="full_name" required placeholder="Jane Doe">
+      </div>
+
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" name="email" required placeholder="jane@example.com">
+      </div>
+
+      <button type="submit" class="btn btn-orange btn-full">
+        Proceed to Rules &nbsp;→
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

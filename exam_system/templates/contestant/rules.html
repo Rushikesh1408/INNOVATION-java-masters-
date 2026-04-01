@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="rules-page fade-in">
+    <div class="rules-card glass">
+        <h1 class="gradient-text">Examination Rules</h1>
+        <p style="color: var(--muted); font-size: 0.9rem;">Test: <span style="color: var(--text); font-weight: 600;">{{ test[1] }}</span> &nbsp;·&nbsp; Limit: <span style="color: var(--orange); font-weight: 700;">{{ test[3] }} Mins</span></p>
+
+        <div class="rules-list">
+            <div class="rule-item">
+                <div class="rule-icon">🛡️</div>
+                <div class="rule-text">
+                    <strong>Anti-Cheat Active:</strong> Fullscreen mode is mandatory. Switching tabs or minimizing will trigger an <strong>automatic submission</strong>.
+                </div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-icon">⏱️</div>
+                <div class="rule-text">
+                    <strong>Timer:</strong> The test will auto-submit when the time expires. Keep an eye on the orange glow timer.
+                </div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-icon">📄</div>
+                <div class="rule-text">
+                    <strong>Questions:</strong> All questions are multiple choice. You can navigate back and forth or skip questions.
+                </div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-icon">📁</div>
+                <div class="rule-text">
+                    <strong>Instructions:</strong> {{ test[2] or "Ensure a stable internet connection throughout the test." }}
+                </div>
+            </div>
+        </div>
+
+        <form action="{{ url_for('contestant.start_test', test_id=test[0]) }}" method="POST">
+            <button type="submit" class="btn btn-orange btn-full" style="font-size: 1.1rem; letter-spacing: 0.1em; padding: 1.1rem;">
+                INITIALIZE EXAM ENGINE &nbsp;⚡
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

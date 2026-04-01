@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProctorEx — Online Examination System</title>
+  <meta name="description" content="ProctorEx — Secure, anti-cheat online examination system for live events and competitions.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Ambient orbs -->
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+
+
+  <!-- Main content -->
+  <div id="app-root">
+    {% block content %}{% endblock %}
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          {% for cat, msg in messages %}
+            toast("{{ msg|e }}", "{{ 'ok' if cat == 'success' else 'err' }}");
+          {% endfor %}
+        });
+      </script>
+    {% endif %}
+  {% endwith %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -16,7 +16,8 @@ class AuthService:
         self.log_service = LogService(db)
 
     def admin_login(self, username: str, password: str) -> tuple[str, int]:
-        admin = self.repo.get_by_username(username)
+        normalized_username = username.strip()
+        admin = self.repo.get_by_username(normalized_username)
         password_hash = admin.password_hash if admin else DUMMY_PASSWORD_HASH
         password_valid = verify_password(password, password_hash)
 
@@ -27,5 +28,8 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        self.log_service.write(action="ADMIN_LOGIN", context=f"username={username}")
-        return create_admin_access_token(username)
+        self.log_service.write(
+            action="ADMIN_LOGIN",
+            context=f"username={admin.username}",
+        )
+        return create_admin_access_token(admin.username)
