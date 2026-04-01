@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="admin-page fade-in">
+    <header class="admin-header">
+        <div>
+            <h1 class="gradient-text">ANALYTICS ENGINE</h1>
+            <p style="color: var(--muted); font-size: 0.8rem; letter-spacing: 0.2rem; text-transform: uppercase;">NODE: {{ test[1] }}</p>
+        </div>
+        <div style="display: flex; gap: 0.8rem;">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost">← Console</a>
+            <button onclick="window.location.reload()" class="btn btn-orange">Sync Data</button>
+        </div>
+    </header>
+
+    <!-- Global Stats -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, min-max(240px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div class="glass slide-up" style="padding: 2rem; text-align: center; border-color: rgba(255,106,0,0.1);">
+            <div style="font-size: .7rem; text-transform: uppercase; letter-spacing: .15em; color: var(--muted); margin-bottom: 1rem;">Total Deployments</div>
+            <div style="font-size: 2.5rem; font-weight: 800; color: var(--orange);">{{ stats[2] or 0 }}</div>
+        </div>
+        <div class="glass slide-up" style="padding: 2rem; text-align: center; border-color: rgba(255,106,0,0.1); animation-delay: 0.1s;">
+            <div style="font-size: .7rem; text-transform: uppercase; letter-spacing: .15em; color: var(--muted); margin-bottom: 1rem;">Average Precision</div>
+            <div style="font-size: 2.5rem; font-weight: 800; color: var(--orange);">{{ "%.1f"|format(stats[0] or 0) }}</div>
+        </div>
+        <div class="glass slide-up" style="padding: 2rem; text-align: center; border-color: rgba(255,106,0,0.1); animation-delay: 0.2s;">
+            <div style="font-size: .7rem; text-transform: uppercase; letter-spacing: .15em; color: var(--muted); margin-bottom: 1rem;">Mean Response Time</div>
+            <div style="font-size: 2.5rem; font-weight: 800; color: var(--orange);">{{ (stats[1] or 0)|round(1) }}<span style="font-size: 1rem; opacity: .5;">s</span></div>
+        </div>
+    </div>
+
+    <!-- Difficulty Heatmap -->
+    <div class="glass slide-up" style="padding: 2.5rem; animation-delay: 0.3s;">
+        <h3 style="margin-bottom: 3rem; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .15em;">
+            Response Latency Heatmap (Per Question)
+        </h3>
+        
+        <div style="display: flex; align-items: flex-end; gap: 1rem; height: 180px; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            {% for q in q_stats %}
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: .75rem;">
+                <div style="width: 100%; max-width: 40px; height: {{ (q[2] or 0) * 1.5 }}px; max-height: 180px; 
+                            background: linear-gradient(to top, var(--orange), var(--orange-dim)); 
+                            border-radius: 6px 6px 0 0; position: relative;
+                            box-shadow: 0 -4px 20px rgba(255,106,0,0.15);">
+                    <span style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; font-weight: 700;">{{ q[2]|round(1) }}s</span>
+                </div>
+                <div style="font-size: .7rem; font-weight: 600; color: var(--muted);">Q{{ loop.index }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
