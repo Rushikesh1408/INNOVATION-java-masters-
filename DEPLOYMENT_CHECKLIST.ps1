@@ -32,7 +32,7 @@ Write-Host @"
    ✅ Multiple choice questions with auto-grading
    ✅ Session tracking and result calculation
    ✅ Leaderboard rankings
-   Technologies: FastAPI, SQLAlchemy, PostgreSQL/SQLite, JWT
+  Technologies: FastAPI, SQLAlchemy, PostgreSQL, JWT
 
 2️⃣  JAVA CODING COMPETITION SYSTEM (NEW - Production Ready)
    ✅ Secure Java code execution engine
@@ -211,7 +211,7 @@ External Tools:
    - Java executor available
 
 ✅ Database Test
-   - SQLite database auto-created
+  - PostgreSQL schema initialized
    - Tables created with relationships
    - Constraints enforced
    - Indexes created for performance
@@ -301,7 +301,7 @@ DEPENDENCY INSTALLATION:
   ☑ bcrypt compatibility resolved (4.1.2)
 
 DATABASE STATUS:
-  ☑ .env configured (SQLite for dev)
+  ☑ .env configured (PostgreSQL)
   ☑ DATABASE_URL correct
   ☑ Migrations/init_db.py ready
   ☑ Admin seed script prepared
@@ -358,7 +358,7 @@ API:
   🔌 Endpoints: 30+
   📤 Response Models: 15+
   🔐 Auth: JWT-based
-  ⚡ Performance: Sub-100ms responses (SQLite, cached leaderboards)
+  ⚡ Performance: Sub-100ms responses (PostgreSQL, cached leaderboards)
 
 Features:
   ✅ Quiz Round: Complete with timing, marking scheme, auto-grading
@@ -435,8 +435,8 @@ Common Issues & Solutions:
   `$env:ADMIN_PASSWORD = "YourSecurePassword123!"`
   python -m scripts.seed_admin
 
-6. Database locked
-   Solution: SQLite limitation. For production, use PostgreSQL.
+6. Database connectivity errors
+  Solution: Verify PostgreSQL service state and DATABASE_URL credentials.
 
 Help Resources:
   - Full README: cat README.md

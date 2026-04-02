@@ -13,10 +13,25 @@ def create_app():
                 template_folder='../templates',
                 static_folder='../static')
     
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-123')
+    flask_env = os.environ.get('FLASK_ENV', 'development').lower()
+    secret_key = os.environ.get('SECRET_KEY')
+
+    if not secret_key:
+        if flask_env == 'production':
+            raise RuntimeError('SECRET_KEY must be set in production.')
+        secret_key = 'dev-only-insecure-key-change-before-production'
+
+    if flask_env == 'production' and secret_key in {
+        'dev-key-123',
+        'dev_secret_key_change_me',
+        'dev-only-insecure-key-change-before-production',
+    }:
+        raise RuntimeError('Weak SECRET_KEY is not allowed in production.')
+
+    app.config['SECRET_KEY'] = secret_key
     app.config['DATABASE_URL'] = os.environ.get('DATABASE_URL')
     
-    # Database.initialize() is not needed for SQLite
+    # Connection initialization is handled lazily by the Database helper.
     
     # Initialize Bcrypt
     bcrypt.init_app(app)

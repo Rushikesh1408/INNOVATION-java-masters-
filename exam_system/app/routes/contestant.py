@@ -130,9 +130,13 @@ def submit_answer():
     if isinstance(option, str):
         option = {'A': 1, 'B': 2, 'C': 3, 'D': 4}.get(option.upper(), 1)
 
-    # Upsert response (INSERT or REPLACE for SQLite)
+    # Upsert response for PostgreSQL.
     Database.execute_query(
-        "INSERT OR REPLACE INTO responses (attempt_id, question_id, selected_option, time_taken_seconds) VALUES (%s, %s, %s, %s)",
+        """INSERT INTO responses (attempt_id, question_id, selected_option, time_taken_seconds)
+           VALUES (%s, %s, %s, %s)
+           ON CONFLICT (attempt_id, question_id)
+           DO UPDATE SET selected_option = EXCLUDED.selected_option,
+                         time_taken_seconds = EXCLUDED.time_taken_seconds""",
         (attempt_id, q_id, option, time_taken)
     )
     return jsonify({'success': True})

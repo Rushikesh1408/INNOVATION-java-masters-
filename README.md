@@ -2,7 +2,7 @@
 
 Production-ready full-stack examination platform featuring **MCQ Quiz Round** and **Java Coding Round** with secure execution, test case evaluation, and comprehensive leaderboarding.
 
-**Tech Stack:** FastAPI, React, PostgreSQL/SQLite, Redis, Celery, Java Runtime
+**Tech Stack:** FastAPI, React, PostgreSQL, Redis, Celery, Java Runtime
 
 ---
 
@@ -300,7 +300,7 @@ Rank 2: User B (75 points)
 
 - Python 3.11+
 - Java Development Kit (JDK 11+)
-- PostgreSQL 13+ (or SQLite for dev)
+- PostgreSQL 13+
 - Redis 6+
 - Node.js 18+
 
@@ -310,9 +310,7 @@ Rank 2: User B (75 points)
 # Copy and edit .env
 cp .env.example .env
 
-DATABASE_URL=sqlite:///./java_masters.db  # Dev
-# or
-DATABASE_URL=postgresql://user:pass@host/db  # Prod
+DATABASE_URL=postgresql+psycopg://postgres:<password>@localhost:5432/java_masters
 
 ADMIN_JWT_SECRET=<generate: openssl rand -hex 32>
 REDIS_URL=redis://localhost:6379/0
@@ -445,7 +443,7 @@ POST /api/v1/coding/submit/1
 | Compilation fails | Check Java code syntax, ensure JDK 11+ installed |
 | All tests timeout | Reduce `time_limit_seconds` or optimize code |
 | Celery not working | Verify Redis running: `redis-cli ping` |
-| Database locked (SQLite) | Use PostgreSQL for concurrent access |
+| Database connection issues | Verify PostgreSQL is running and `DATABASE_URL` is correct |
 
 ---
 
