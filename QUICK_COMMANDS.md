@@ -1,15 +1,14 @@
+
 # Java Masters Exam Engine - Quick Commands
 
 This file is documentation. It is not an executable script.
 
 ## Setup Variables (PowerShell)
-```powershell
-$JAVAMS_ROOT = (Resolve-Path .).Path
-$env:ADMIN_USERNAME = $env:ADMIN_USERNAME
-$env:ADMIN_PASSWORD = $env:ADMIN_PASSWORD
-```
 
-Note: create a local `.env` file from the template and set real credentials before running commands. Never commit `.env`.
+**IMPORTANT:** Before running commands, set `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables. Options:
+- Create a `.env` file with your credentials and load it (recommended, never commit `.env`)
+- Export in PowerShell: `$env:ADMIN_USERNAME="..."; $env:ADMIN_PASSWORD="..."`
+- Set system environment variables via System Properties
 
 ## Start Commands (PowerShell)
 ```powershell
