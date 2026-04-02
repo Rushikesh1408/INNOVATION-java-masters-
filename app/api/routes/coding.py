@@ -250,7 +250,7 @@ def get_best_submission(
 ):
     """Get best submission for a problem (current user)"""
     repo = SubmissionRepository(db)
-    submission = repo.get_latest_by_user_problem(current_user.id, problem_id)
+    submission = repo.get_best_by_user_problem(current_user.id, problem_id)
 
     if not submission:
         raise HTTPException(status_code=404, detail="No submissions found")

@@ -131,6 +131,22 @@ class SubmissionRepository:
             .first()
         )
 
+    def get_best_by_user_problem(self, user_id: int, problem_id: int) -> Submission | None:
+        """Get highest-scoring submission from user for problem.
+
+        Falls back to most recent among ties.
+        """
+        return (
+            self.db.query(Submission)
+            .filter(
+                Submission.user_id == user_id,
+                Submission.problem_id == problem_id,
+                Submission.score.is_not(None),
+            )
+            .order_by(Submission.score.desc(), Submission.submitted_at.desc())
+            .first()
+        )
+
     def get_by_user_exam(self, user_id: int, exam_id: int) -> list[Submission]:
         """Get all submissions by user for exam (across all problems in exam)"""
         return (

@@ -48,5 +48,49 @@
             {% endfor %}
         </div>
     </div>
+    <!-- Detailed Results Table -->
+    <div class="glass slide-up" style="padding: 2.5rem; margin-top: 3rem; animation-delay: 0.4s;">
+        <h3 style="margin-bottom: 2rem; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .15em;">
+            Participant Performance (Ordered by Accuracy & Time)
+        </h3>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--muted); font-size: .75rem; text-transform: uppercase;">
+                        <th style="padding: 1rem;">Rank</th>
+                        <th style="padding: 1rem;">Contestant</th>
+                        <th style="padding: 1rem;">Accuracy</th>
+                        <th style="padding: 1rem;">Time Taken</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if rankings %}
+                        {% for r in rankings %}
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
+                            <td style="padding: 1.25rem 1rem;">
+                                <span class="badge {{ 'badge-orange' if loop.index <= 3 else 'badge-ghost' }}" style="padding: .2rem .5rem; font-size: .7rem;">#{{ loop.index }}</span>
+                            </td>
+                            <td style="padding: 1.25rem 1rem;">
+                                <div style="font-weight: 600; color: #fff;">{{ r[1] or 'Anonymous' }}</div>
+                                <div style="font-size: .75rem; color: var(--muted);">{{ r[2] }}</div>
+                            </td>
+                            <td style="padding: 1.25rem 1rem;">
+                                <div style="font-size: 1.1rem; font-weight: 700; color: var(--success);">{{ r[3] }}</div>
+                            </td>
+                            <td style="padding: 1.25rem 1rem; color: var(--muted); font-size: .85rem;">
+                                {{ r[4] }}s
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" style="padding: 3rem; text-align: center; color: var(--muted);">No submissions synchronized yet.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

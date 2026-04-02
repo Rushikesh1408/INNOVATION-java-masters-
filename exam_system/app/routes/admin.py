@@ -128,6 +128,11 @@ def toggle_test(test_id):
     if test:
         new_status = 0 if test[0] else 1
         Database.execute_query("UPDATE tests SET is_active = %s WHERE id = %s", (new_status, test_id))
+    
+    # Return to previous page if it exists and is an admin page
+    ref = request.referrer
+    if ref and ('admin' in ref):
+        return redirect(ref)
     return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route('/delete-test/<int:test_id>', methods=['POST'])
@@ -185,8 +190,16 @@ def analytics(test_id):
            GROUP BY q.id, q.question_text""",
         (test_id,), fetch='all'
     )
+    rankings = Database.execute_query(
+        """SELECT a.id, c.full_name, a.contestant_email, a.score, a.total_time_taken 
+           FROM attempts a 
+           JOIN contestants c ON a.contestant_email = c.email
+           WHERE a.test_id = %s AND a.submitted = 1 
+           ORDER BY a.score DESC, a.total_time_taken ASC""",
+        (test_id,), fetch='all'
+    )
     if not test:
         flash('Analytical node not found.')
         return redirect(url_for('admin.dashboard'))
     return render_template('admin/analytics.html', test=test, stats=stats,
-                           q_stats=q_stats, test_id=test_id)
+                           q_stats=q_stats, rankings=rankings, test_id=test_id)
