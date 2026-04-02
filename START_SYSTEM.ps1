@@ -120,11 +120,16 @@ try {
 # Check database
 Write-Info "[4/5] Checking database..."
 try {
-    $pgReady = Test-NetConnection -ComputerName localhost -Port 5432 -WarningAction SilentlyContinue
-    if ($pgReady.TcpTestSucceeded) {
-        Write-Success "  ✅ PostgreSQL reachable on localhost:5432"
-    } else {
-        Write-WarnMsg "  ⚠️  PostgreSQL not reachable on localhost:5432"
+    $tcpClient = [System.Net.Sockets.TcpClient]::new()
+    try {
+        $connectTask = $tcpClient.ConnectAsync('localhost', 5432)
+        if ($connectTask.Wait(1500) -and $tcpClient.Connected) {
+            Write-Success "  ✅ PostgreSQL reachable on localhost:5432"
+        } else {
+            Write-WarnMsg "  ⚠️  PostgreSQL not reachable on localhost:5432"
+        }
+    } finally {
+        $tcpClient.Dispose()
     }
 } catch {
     Write-WarnMsg "  ⚠️  Unable to verify PostgreSQL connectivity"

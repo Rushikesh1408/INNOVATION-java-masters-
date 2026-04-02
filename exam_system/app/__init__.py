@@ -6,6 +6,10 @@ from .db import Database
 
 bcrypt = Bcrypt()
 
+
+def _is_placeholder_env_value(value):
+    return bool(value) and value.startswith('<') and value.endswith('>')
+
 def create_app():
     load_dotenv()
     
@@ -15,6 +19,13 @@ def create_app():
     
     flask_env = os.environ.get('FLASK_ENV', 'development').lower()
     secret_key = os.environ.get('SECRET_KEY')
+    database_url = os.environ.get('DATABASE_URL')
+
+    if _is_placeholder_env_value(secret_key):
+        secret_key = None
+
+    if _is_placeholder_env_value(database_url):
+        database_url = None
 
     if not secret_key:
         if flask_env == 'production':
@@ -29,7 +40,10 @@ def create_app():
         raise RuntimeError('Weak SECRET_KEY is not allowed in production.')
 
     app.config['SECRET_KEY'] = secret_key
-    app.config['DATABASE_URL'] = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise RuntimeError('DATABASE_URL must be set to a real PostgreSQL URL.')
+
+    app.config['DATABASE_URL'] = database_url
     
     # Connection initialization is handled lazily by the Database helper.
     

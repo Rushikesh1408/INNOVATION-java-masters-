@@ -274,7 +274,7 @@ STEP 6: Run End-to-End Demo (Terminal 4 - Optional)
 
 STEP 7: For Production Deployment
 ────────────────────────────────────────────────────────────────────────────
-  - Switch DATABASE_URL in .env to PostgreSQL
+  - If using PostgreSQL for production, ensure DATABASE_URL points to PostgreSQL
   - Generate strong SECRET_KEY
   - Set CORS_ORIGINS to your domain
   - Configure Redis for persistence
@@ -301,7 +301,7 @@ DEPENDENCY INSTALLATION:
   ☑ bcrypt compatibility resolved (4.1.2)
 
 DATABASE STATUS:
-  ☑ .env configured (PostgreSQL)
+  ☑ .env configured (PostgreSQL assumed for production)
   ☑ DATABASE_URL correct
   ☑ Migrations/init_db.py ready
   ☑ Admin seed script prepared
