@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -21,7 +22,9 @@ class JavaExecutor:
     """Safely execute Java code with test cases"""
 
     def __init__(self, timeout_seconds: int = 2, memory_limit_mb: int = 256):
-        self.timeout_seconds = timeout_seconds
+        if int(timeout_seconds) <= 0:
+            raise ValueError("timeout_seconds must be a positive integer")
+        self.timeout_seconds = int(timeout_seconds)
         if int(memory_limit_mb) <= 0:
             raise ValueError("memory_limit_mb must be a positive integer")
         self.memory_limit_mb = int(memory_limit_mb)
@@ -102,7 +105,7 @@ class JavaExecutor:
 
             execution_time = (time.time() - start_time) * 1000  # ms
 
-            process_status = "success" if result.returncode == 0 else "error"
+            process_status = "success" if result.returncode == 0 else "runtime_error"
             error_text = result.stderr.strip() if result.stderr else ""
             if result.returncode != 0 and not error_text:
                 error_text = f"Process exited with return code {result.returncode}"
@@ -126,7 +129,7 @@ class JavaExecutor:
                 error=str(e)
             )
 
-    def evaluate_test_case(self, code: str, input_data: str, expected_output: str) -> dict:
+    def evaluate_test_case(self, input_data: str, expected_output: str) -> dict:
         """
         Evaluate single test case.
         
@@ -196,7 +199,6 @@ class JavaExecutor:
 
         for i, test in enumerate(visible_tests):
             test_result = self.evaluate_test_case(
-                code,
                 test.get("input", ""),
                 test.get("expected", "")
             )
@@ -239,7 +241,6 @@ class JavaExecutor:
 
         for i, test in enumerate(hidden_tests):
             test_result = self.evaluate_test_case(
-                code,
                 test.get("input", ""),
                 test.get("expected", "")
             )
@@ -279,8 +280,18 @@ class JavaExecutor:
 
     def cleanup(self):
         """Clean up temporary files"""
-        import shutil
-        try:
-            shutil.rmtree(self.temp_dir)
-        except Exception:
-            pass
+        if hasattr(self, 'temp_dir') and self.temp_dir and Path(self.temp_dir).exists():
+            try:
+                import shutil
+                shutil.rmtree(self.temp_dir)
+            except Exception:
+                pass
+
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensure cleanup"""
+        self.cleanup()
+        return False

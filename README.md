@@ -256,13 +256,23 @@ def calculate_score(eval_result):
     if status == "compile_error":
         return 0
     
-    # Correctness: 70% (must pass ALL visible + ALL hidden)
-    correctness = (passed_hidden / total_hidden) * 70
+    if status == "timeout":
+        # Proportional scoring: pass rate × corresponding weight
+        total_visible = eval_result.get("total_visible", 1) or 1
+        total_hidden = eval_result.get("total_hidden", 1) or 1
+        visible_ratio = min(1.0, eval_result.get("passed_visible", 0) / total_visible)
+        hidden_ratio = min(1.0, eval_result.get("passed_hidden", 0) / total_hidden)
+        return int(visible_ratio * 70 + hidden_ratio * 20)
+    
+    # Correctness: 70% (from hidden tests only)
+    # Guard against division by zero
+    total_hidden = eval_result.get("total_hidden", 1) or 1
+    correctness = (eval_result.get("passed_hidden", 0) / total_hidden) * 70
     
     # Time efficiency: 20% (bonus if < 50% of timeout)
     time_bonus = 20 if execution_time < (timeout * 0.5) else 0
     
-    # Code quality: 10% (always awarded)
+    # Code quality: 10% (placeholder for actual metrics)
     quality = 10
     
     return min(100, correctness + time_bonus + quality)
@@ -334,11 +344,19 @@ curl http://localhost:8000/docs
 
 ### Code Execution Sandbox
 
--  Subprocess isolation with 2-second timeout
--  No file system or network access
--  Memory limits (256MB default)
--  Automatic process cleanup
--  Error sanitization (no leaks)
+⚠️  **Current Implementation (Development/Staging Only):**
+-  Subprocess execution with 2-second timeout
+-  JVM heap limit (-Xmx256m)
+-  Basic process cleanup
+
+⚠️  **NOT Implemented (Required for Production):**
+-  No filesystem isolation (can access all readable files)
+-  No network isolation (can make network calls)
+-  Memory limit is JVM heap only, not total process memory
+-  No automatic error sanitization
+
+**Production-Grade Sandboxing (Recommended):**
+Deploy with container isolation (Docker with `--network=none --read-only --memory=256m`) or OS-level controls (seccomp, AppArmor, SELinux)
 
 ### API Security
 
@@ -368,10 +386,10 @@ POST /api/v1/coding/submit/1
 {"code": "invalid syntax"}
 # Response: status=compile_error, score=0
 
-# Timeout
+`# Timeout (execution exceeds timeout limit)
 POST /api/v1/coding/submit/1
 {"code": "while(true){};"}
-# Response: status=timeout, score=partial
+# Response: status=timeout, score=partial (proportional scoring: tests passed × weight)`
 
 # Wrong Answer
 POST /api/v1/coding/submit/1

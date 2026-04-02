@@ -32,7 +32,7 @@ A **complete, production-grade exam platform** featuring:
 
 ### Step 1: Create and Configure `.env`
 ```bash
-# Copy the template shown in the configuration section (line 253+)
+# Copy the template shown in the configuration section (see environment variables below)
 cp .env.example .env
 
 # Then fill required values before starting services:

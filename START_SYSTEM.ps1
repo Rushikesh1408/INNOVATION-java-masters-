@@ -35,7 +35,7 @@ param(
 # Color helpers
 function Write-Success { Write-Host @args -ForegroundColor Green }
 function Write-Info { Write-Host @args -ForegroundColor Cyan }
-function Write-Warning { Write-Host @args -ForegroundColor Yellow }
+function Write-WarnMsg { Write-Host @args -ForegroundColor Yellow }
 function Write-ErrorMessage { Write-Host @args -ForegroundColor Red }
 
 Write-Info "
@@ -88,7 +88,7 @@ foreach ($dep in $deps) {
     if ($check -eq "ok") {
         Write-Success "  ✅ $dep"
     } else {
-        Write-Warning "  ⚠️  $dep (optional)"
+        Write-WarnMsg "  ⚠️  $dep (optional)"
         if ($dep -in @("fastapi", "sqlalchemy")) {
             $missing += $dep
         }
@@ -109,11 +109,11 @@ try {
         Write-Success "  ✅ Redis running on localhost:6379"
         $hasRedis = $true
     } else {
-        Write-Warning "  ⚠️  Redis not accessible (Celery will fail without it)"
+        Write-WarnMsg "  ⚠️  Redis not accessible (Celery will fail without it)"
         $hasRedis = $false
     }
 } catch {
-    Write-Warning "  ⚠️  Redis not found (install redis-server or use WSL)"
+    Write-WarnMsg "  ⚠️  Redis not found (install redis-server or use WSL)"
     $hasRedis = $false
 }
 
@@ -123,7 +123,7 @@ $dbPath = ".\java_masters.db"
 if (Test-Path $dbPath) {
     Write-Success "  ✅ Database exists (java_masters.db)"
 } else {
-    Write-Warning "  ⚠️  Database not found - will be created on first run"
+    Write-WarnMsg "  ⚠️  Database not found - will be created on first run"
 }
 
 # Create startup commands
@@ -163,10 +163,13 @@ Health Check:          http://localhost:$ApiPort/health
 Test Admin Login:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Development-only example. Do not use shared/default credentials in production.
-Set `$env:ADMIN_USERNAME and `$env:ADMIN_PASSWORD before running this command.
-curl -X POST http://localhost:$ApiPort/api/v1/auth/admin/login `
+Set `$env:ADMIN_USERNAME` and `$env:ADMIN_PASSWORD` before running this command.
+
+@'
+curl -X POST http://localhost:8000/api/v1/auth/admin/login `
   -H 'Content-Type: application/json' `
-    -d "{\"username\":\"$env:ADMIN_USERNAME\",\"password\":\"$env:ADMIN_PASSWORD\"}"
+  -d "{\"username\":\"<ADMIN_USERNAME>\",\"password\":\"<ADMIN_PASSWORD>\"}"
+'@ | Write-Host
 
 Run Demo (End-to-End Workflow):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
