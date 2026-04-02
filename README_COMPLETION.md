@@ -146,7 +146,7 @@ python demo.py  # Full end-to-end workflow
 | Component | Tech |
 |-----------|------|
 | Backend | FastAPI 0.115.0 |
-| Database | SQLite (dev) / PostgreSQL (prod) |
+| Database | PostgreSQL |
 | ORM | SQLAlchemy 2.0.44 |
 | Async Queue | Celery 5.4.0 |
 | Cache/Broker | Redis 5.2.1 |
@@ -255,7 +255,7 @@ All endpoints documented at: **http://localhost:8000/docs**
 
 ### Next Steps for Production:
 1. Replace default admin credentials (use `<STRONG_UNIQUE_PASSWORD>`) with a strong unique password and rotate any pre-shared credentials
-2. Switch to PostgreSQL: Update `DATABASE_URL` in `.env`
+2. Configure production PostgreSQL credentials via environment/secret manager (`DATABASE_URL`)
 3. Generate strong `SECRET_KEY`
 4. Enable HTTPS (SSL/TLS certificate)
 5. Set up Redis persistence

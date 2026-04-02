@@ -119,11 +119,15 @@ try {
 
 # Check database
 Write-Info "[4/5] Checking database..."
-$dbPath = ".\java_masters.db"
-if (Test-Path $dbPath) {
-    Write-Success "  ✅ Database exists (java_masters.db)"
-} else {
-    Write-WarnMsg "  ⚠️  Database not found - will be created on first run"
+try {
+    $pgReady = Test-NetConnection -ComputerName localhost -Port 5432 -WarningAction SilentlyContinue
+    if ($pgReady.TcpTestSucceeded) {
+        Write-Success "  ✅ PostgreSQL reachable on localhost:5432"
+    } else {
+        Write-WarnMsg "  ⚠️  PostgreSQL not reachable on localhost:5432"
+    }
+} catch {
+    Write-WarnMsg "  ⚠️  Unable to verify PostgreSQL connectivity"
 }
 
 # Create startup commands

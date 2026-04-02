@@ -118,7 +118,7 @@ Status: DEVELOPMENT COMPLETE - PRODUCTION DEPLOYMENT PENDING SECURITY HARDENING
        - Added: bcrypt==4.1.2 (fixed compatibility)
        - Total: 13 core dependencies
 
-    ✅ .env (SQLite database configured)
+    ✅ .env (PostgreSQL database configured)
 
 ═══════════════════════════════════════════════════════════════════════════════
 🔧 TECHNICAL IMPLEMENTATION DETAILS
@@ -269,7 +269,7 @@ HIDDEN TEST CASE LOGIC
    - No conflicting versions ✓
 
 ✅ Database Initialization
-   - SQLite auto-created ✓
+  - PostgreSQL schema initialized ✓
    - All tables created ✓
    - Relationships configured ✓
    - Constraints enforced ✓
@@ -291,10 +291,10 @@ Environment: ✅ READY
   - No missing modules
 
 Database: ✅ READY
-  - SQLite configured for dev
+  - PostgreSQL configured
   - Admin user created
   - Schema initialized
-  - Can switch to PostgreSQL for production
+  - Production-ready engine in use
 
 Backend: ✅ READY
   - FastAPI app complete
@@ -512,7 +512,7 @@ Short Term (Week 1):
   5. Test admin dashboard features
 
 Medium Term (Production):
-  1. Configure PostgreSQL database
+  1. Harden PostgreSQL access (least-privilege user, credential rotation, backups)
   2. Set up SSL/TLS certificates
   3. Configure Gunicorn + Nginx
   4. Set up monitoring (Prometheus + Grafana)

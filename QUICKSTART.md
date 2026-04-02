@@ -17,7 +17,7 @@ A **complete, production-grade exam platform** featuring:
 ✅ **Async Evaluation** - Celery workers for non-blocking background evaluation  
 ✅ **Live Leaderboards** - Real-time rankings across quiz + coding  
 ✅ **Admin Dashboard** - Create exams, problems, manage users  
-✅ **Full-Stack Architecture** - FastAPI (Python), React, SQLite/PostgreSQL, Celery, Redis  
+✅ **Full-Stack Architecture** - FastAPI (Python), React, PostgreSQL, Celery, Redis  
 
 ---
 
@@ -262,11 +262,11 @@ javams/
 
 ## 🔧 Configuration (.env File)
 
-Current configuration uses **SQLite** for simplicity:
+Current configuration uses **PostgreSQL**:
 
 ```env
-# Database (SQLite for dev)
-DATABASE_URL=sqlite:///./java_masters.db
+# Database (PostgreSQL)
+DATABASE_URL=postgresql+psycopg://postgres:<password>@localhost:5432/java_masters
 
 # JWT Authentication
 SECRET_KEY=your-secret-key-here
@@ -286,9 +286,9 @@ ADMIN_PASSWORD=<your-strong-password>
 ```
 
 ### For Production:
-Switch `DATABASE_URL` to PostgreSQL:
+Use managed PostgreSQL and rotate credentials:
 ```env
-DATABASE_URL=postgresql://user:password@localhost/javams
+DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>:5432/java_masters
 ```
 
 ---
@@ -302,7 +302,7 @@ DATABASE_URL=postgresql://user:password@localhost/javams
 | **Java compilation fails** | Verify JDK installed: `javac -version` (minimum JDK 11) |
 | **Port 8000 already in use** | Change port: `uvicorn app.main:app --port 8001` |
 | **Admin login fails** | Reseed admin (PowerShell): `$env:ADMIN_USERNAME="<admin>"; $env:ADMIN_PASSWORD="<strong-password>"; python -m scripts.seed_admin`<br>Reseed admin (Bash/Zsh): `ADMIN_USERNAME=<admin> ADMIN_PASSWORD=<strong-password> python -m scripts.seed_admin` |
-| **Database locked error** | SQLite locks under high concurrency. Switch to PostgreSQL for production. |
+| **Database connection error** | Ensure PostgreSQL is running and `DATABASE_URL` is valid. |
 | **bcrypt version warning** | Non-fatal. Passlib handles gracefully. Update if error occurs: `pip install --upgrade bcrypt` |
 
 ---
@@ -335,7 +335,7 @@ DATABASE_URL=postgresql://user:password@localhost/javams
                        │
                   ┌────▼────┐
                   │Database  │
-                  │(SQLite)  │
+                  │(Postgres)│
                   └──────────┘
          
     ┌─────────────────────────────────┐

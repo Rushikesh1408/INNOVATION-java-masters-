@@ -5,7 +5,7 @@ Project: Full-stack exam platform with MCQ and Java coding rounds.
 Status: Production-ready with caveats.
 
 Before production go-live, complete these items:
-- Migrate default SQLite setup to PostgreSQL.
+- Validate PostgreSQL backup/restore and credential rotation.
 - Replace weak/default credential examples and enforce strong password policy.
 - Enable TLS/HTTPS and secure transport defaults.
 - Run a formal security audit and penetration test.

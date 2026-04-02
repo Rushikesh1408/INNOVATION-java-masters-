@@ -1,27 +1,31 @@
-import sqlite3
 import os
 from contextlib import contextmanager
+from urllib.parse import urlparse
 
-def _get_db_path():
-    """Get the SQLite database path from DATABASE_URL env var."""
-    db_url = os.environ.get('DATABASE_URL', 'sqlite:///exam_db.db')
-    if db_url.startswith('sqlite:///'):
-        path = db_url[len('sqlite:///'):]
-        # If relative, resolve relative to exam_system root (where wsgi.py lives)
-        if not os.path.isabs(path):
-            base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            path = os.path.join(base, path)
-        return path
-    return 'exam_db.db'
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+
+def _get_db_url():
+    """Get the PostgreSQL DATABASE_URL env var."""
+    db_url = os.environ.get('DATABASE_URL')
+    if not db_url:
+        raise RuntimeError('DATABASE_URL is required and must point to PostgreSQL.')
+    return db_url
+
+
+def _connect(db_url: str):
+    parsed = urlparse(db_url)
+    if parsed.scheme.startswith('postgres'):
+        return psycopg2.connect(db_url)
+    raise RuntimeError('Unsupported DATABASE_URL. Only PostgreSQL URLs are supported.')
 
 class Database:
     @classmethod
     @contextmanager
     def get_connection(cls):
-        db_path = _get_db_path()
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
+        db_url = _get_db_url()
+        conn = _connect(db_url)
         try:
             yield conn
             conn.commit()
@@ -33,21 +37,22 @@ class Database:
 
     @classmethod
     def _fix_query(cls, query):
-        """Convert %s placeholders to ? for SQLite."""
-        return query.replace('%s', '?')
+        return query
 
     @classmethod
     def execute_query(cls, query, params=None, fetch=None):
         query = cls._fix_query(query)
         with cls.get_connection() as conn:
-            cur = conn.cursor()
+            cur = conn.cursor(cursor_factory=RealDictCursor)
             cur.execute(query, params or ())
             if fetch == 'one':
                 row = cur.fetchone()
-                return tuple(row) if row else None
+                if row is None:
+                    return None
+                return tuple(row.values())
             elif fetch == 'all':
                 rows = cur.fetchall()
-                return [tuple(r) for r in rows]
+                return [tuple(r.values()) for r in rows]
             return None
 
     @classmethod
