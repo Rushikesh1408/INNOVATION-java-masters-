@@ -21,15 +21,11 @@ Before production go-live, complete these items:
 1. Environment setup
    - `pip install -r requirements.txt`
 
-2. Configure secrets and environment
-   - Copy template to `.env` and fill required values.
-   - Generate a strong password and keep it out of source control.
-   - Example generation:
-     - `openssl rand -base64 32`
-   - Set shell variables before seeding:
-     - `ADMIN_USERNAME=<your-admin-user>`
-     - `ADMIN_PASSWORD=<GENERATED_STRONG_PASSWORD>`
-   - Never commit `.env`.
+2. PostgreSQL setup
+  - Install PostgreSQL 14 or newer.
+  - Create the application database.
+  - Set `DATABASE_URL` in `.env` or export it in your shell.
+  - Run migrations with `alembic upgrade head`.
 
 3. Initialize database and admin
    - `python -m scripts.seed_admin`
@@ -44,6 +40,10 @@ Before production go-live, complete these items:
 # from repository root
 pip install -r requirements.txt
 
+# install and initialize PostgreSQL 14+
+# create the database, set DATABASE_URL, then run migrations
+alembic upgrade head
+
 # set credentials in your shell or .env first
 python -m scripts.seed_admin
 
@@ -51,6 +51,24 @@ python -m scripts.seed_admin
 uvicorn app.main:app --reload
 python scripts/run_celery_worker.py
 ```
+
+## Database Operations
+
+### Backup
+```bash
+pg_dump "$DATABASE_URL" > backup.sql
+```
+
+### Restore
+```bash
+psql "$DATABASE_URL" < backup.sql
+```
+
+### Credential Rotation
+1. Generate a new password.
+2. Run `ALTER USER <db_user> WITH PASSWORD '<new_password>';` in PostgreSQL.
+3. Update `DATABASE_URL` in `.env` or your secret manager.
+4. Restart the API and worker services.
 
 Admin login check (replace placeholders):
 ```bash
@@ -78,3 +96,4 @@ curl -X POST http://localhost:8000/api/v1/auth/admin/login \
 - Minimum Python: 3.11+
 - Tested runtime documentation target: Python 3.13.x
 - Java: JDK 11+
+- PostgreSQL: 14+

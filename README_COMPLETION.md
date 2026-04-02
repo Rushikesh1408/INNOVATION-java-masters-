@@ -62,7 +62,33 @@ cd javams
 pip install -r requirements.txt
 ```
 
-### Step 2: Seed Admin User
+### Step 2: Configure Database
+**Option A: Docker**
+```bash
+docker run --name javams-postgres \
+	-e POSTGRES_DB=javams \
+	-e POSTGRES_USER=postgres \
+	-e POSTGRES_PASSWORD=<strong-password> \
+	-p 5432:5432 \
+	-d postgres:15
+```
+
+**Option B: Local PostgreSQL**
+```bash
+# Create the database with your preferred PostgreSQL admin account
+createdb javams
+```
+
+Set `DATABASE_URL` before seeding:
+```bash
+# macOS / Linux
+export DATABASE_URL="postgresql+psycopg://<user>:<password>@localhost:5432/javams"
+
+# Windows PowerShell
+$env:DATABASE_URL = "postgresql+psycopg://<user>:<password>@localhost:5432/javams"
+```
+
+### Step 3: Seed Admin User
 ```bash
 # WARNING: Example credentials below are insecure and for local development only.
 # Change immediately after setup and do not reuse in production.
@@ -76,7 +102,7 @@ export ADMIN_PASSWORD="<your-strong-password>"
 python -m scripts.seed_admin
 ```
 
-### Step 3: Start Services (3 Terminals)
+### Step 4: Start Services (3 Terminals)
 
 **Terminal 1 - Backend:**
 ```bash
