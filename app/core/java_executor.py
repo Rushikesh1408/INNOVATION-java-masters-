@@ -29,6 +29,36 @@ class JavaExecutor:
             raise ValueError("memory_limit_mb must be a positive integer")
         self.memory_limit_mb = int(memory_limit_mb)
         self.temp_dir = tempfile.mkdtemp(prefix="java_exec_")
+        self.docker_image = os.environ.get("JAVA_EXECUTOR_IMAGE", "eclipse-temurin:17-jdk-jammy")
+
+    def _docker_base_command(self) -> list[str]:
+        return [
+            "docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "--read-only",
+            "--cap-drop",
+            "ALL",
+            "--security-opt",
+            "no-new-privileges",
+            "--pids-limit",
+            "128",
+            "--cpus",
+            "1.0",
+            "--memory",
+            f"{self.memory_limit_mb}m",
+            "-v",
+            f"{self.temp_dir}:/workspace:rw",
+            "-w",
+            "/workspace",
+            "--tmpfs",
+            "/tmp:rw,size=64m",
+            self.docker_image,
+            "sh",
+            "-lc",
+        ]
 
     def compile_code(self, code: str) -> tuple[bool, str]:
         """
@@ -43,27 +73,28 @@ class JavaExecutor:
         java_file = Path(self.temp_dir) / "Main.java"
         
         try:
+            if shutil.which("docker") is None:
+                return False, "Docker is required for Java execution sandboxing"
+
             # Write code to file
             with open(java_file, "w", encoding="utf-8") as f:
                 f.write(code)
 
-            # Compile
             result = subprocess.run(
-                ["javac", str(java_file)],
+                self._docker_base_command() + ["javac Main.java"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=max(15, self.timeout_seconds + 10),
             )
 
             if result.returncode != 0:
-                return False, result.stderr
+                error_text = result.stderr.strip() if result.stderr else result.stdout.strip()
+                return False, error_text or "Compilation failed"
 
             return True, ""
 
         except subprocess.TimeoutExpired:
             return False, "Compilation timeout"
-        except FileNotFoundError:
-            return False, "Java compiler (javac) not found. Ensure JDK is installed."
         except Exception as e:
             return False, str(e)
 
@@ -86,21 +117,22 @@ class JavaExecutor:
             )
 
         try:
+            if shutil.which("docker") is None:
+                return ExecutionResult(
+                    status="error",
+                    error="Docker is required for Java execution sandboxing.",
+                )
+
             start_time = time.time()
 
             result = subprocess.run(
-                [
-                    "java",
-                    f"-Xmx{self.memory_limit_mb}m",
-                    "-cp",
-                    self.temp_dir,
-                    "Main",
-                ],
+                self._docker_base_command()
+                + [f'java -Xmx{self.memory_limit_mb}m -cp /workspace Main'],
                 input=input_data,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout_seconds,
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
             execution_time = (time.time() - start_time) * 1000  # ms
@@ -114,14 +146,14 @@ class JavaExecutor:
                 status=process_status,
                 output=result.stdout.strip(),
                 error=error_text,
-                execution_time_ms=execution_time
+                execution_time_ms=execution_time,
             )
 
         except subprocess.TimeoutExpired:
             return ExecutionResult(
                 status="timeout",
                 error=f"Execution exceeded {self.timeout_seconds} seconds",
-                execution_time_ms=self.timeout_seconds * 1000
+                execution_time_ms=self.timeout_seconds * 1000,
             )
         except Exception as e:
             return ExecutionResult(
