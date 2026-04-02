@@ -60,6 +60,12 @@ class JavaExecutor:
             "-lc",
         ]
 
+    def _compute_jvm_heap_mb(self) -> int:
+        # Keep heap below container memory so JVM + native overhead do not trigger OOM.
+        reduced_heap = int(self.memory_limit_mb * 0.75)
+        safe_heap = max(64, reduced_heap)
+        return min(safe_heap, self.memory_limit_mb)
+
     def compile_code(self, code: str) -> tuple[bool, str]:
         """
         Compile Java code.
@@ -124,10 +130,11 @@ class JavaExecutor:
                 )
 
             start_time = time.time()
+            heap_mb = self._compute_jvm_heap_mb()
 
             result = subprocess.run(
                 self._docker_base_command()
-                + [f'java -Xmx{self.memory_limit_mb}m -cp /workspace Main'],
+                + [f'java -Xmx{heap_mb}m -cp /workspace Main'],
                 input=input_data,
                 capture_output=True,
                 text=True,

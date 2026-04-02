@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 
 import { apiClient } from "./api/client";
@@ -53,11 +53,12 @@ export default function App() {
   const [quizResult, setQuizResult] = useState(null);
   const [codingProblems, setCodingProblems] = useState([]);
   const [selectedProblemId, setSelectedProblemId] = useState(null);
-  const [codingCode, setCodingCode] = useState(DEFAULT_CODE);
+  const [codingCodeMap, setCodingCodeMap] = useState({});
   const [codingResult, setCodingResult] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [antiCheatWarnings, setAntiCheatWarnings] = useState(0);
   const quizTimerRef = useRef(null);
+  const submissionInProgressRef = useRef(false);
 
   useEffect(() => {
     const saved = restoreState();
@@ -76,9 +77,10 @@ export default function App() {
     setQuizResult(saved.quizResult || null);
     setCodingProblems(saved.codingProblems || []);
     setSelectedProblemId(saved.selectedProblemId || null);
-    setCodingCode(saved.codingCode || DEFAULT_CODE);
+    setCodingCodeMap(saved.codingCodeMap || {});
     setCodingResult(saved.codingResult || null);
     setLeaderboard(saved.leaderboard || []);
+    setAntiCheatWarnings(saved.antiCheatWarnings || 0);
   }, []);
 
   useEffect(() => {
@@ -94,9 +96,10 @@ export default function App() {
       quizResult,
       codingProblems,
       selectedProblemId,
-      codingCode,
+      codingCodeMap,
       codingResult,
       leaderboard,
+      antiCheatWarnings,
     });
   }, [
     stage,
@@ -110,9 +113,10 @@ export default function App() {
     quizResult,
     codingProblems,
     selectedProblemId,
-    codingCode,
+    codingCodeMap,
     codingResult,
     leaderboard,
+    antiCheatWarnings,
   ]);
 
   const currentQuestion = questions[currentQuestionIndex] || null;
@@ -120,6 +124,12 @@ export default function App() {
     () => codingProblems.find((problem) => problem.id === selectedProblemId) || codingProblems[0] || null,
     [codingProblems, selectedProblemId]
   );
+  const currentCodingCode = useMemo(() => {
+    if (!selectedProblem) {
+      return DEFAULT_CODE;
+    }
+    return codingCodeMap[selectedProblem.id] || selectedProblem.starter_code || DEFAULT_CODE;
+  }, [codingCodeMap, selectedProblem]);
 
   useEffect(() => {
     if (stage !== "quiz") {
@@ -165,12 +175,6 @@ export default function App() {
   }, [stage]);
 
   useEffect(() => {
-    if (stage === "quiz" && antiCheatWarnings >= 2) {
-      handleQuizSubmit();
-    }
-  }, [antiCheatWarnings, stage]);
-
-  useEffect(() => {
     if (!currentQuestion || stage !== "quiz") {
       return;
     }
@@ -201,7 +205,7 @@ export default function App() {
     setQuizResult(null);
     setCodingProblems([]);
     setSelectedProblemId(null);
-    setCodingCode(DEFAULT_CODE);
+    setCodingCodeMap({});
     setCodingResult(null);
     setLeaderboard([]);
     setAntiCheatWarnings(0);
@@ -260,11 +264,15 @@ export default function App() {
     }));
   };
 
-  const handleQuizSubmit = async () => {
+  const handleQuizSubmit = useCallback(async () => {
+    if (submissionInProgressRef.current) {
+      return;
+    }
     if (!sessionData?.session_id || !questions.length) {
       return;
     }
 
+    submissionInProgressRef.current = true;
     try {
       setLoading(true);
       const answersPayload = questions.map((question) => ({
@@ -287,15 +295,22 @@ export default function App() {
     } catch (requestError) {
       setError(requestError.response?.data?.detail || "Unable to submit quiz.");
     } finally {
+      submissionInProgressRef.current = false;
       setLoading(false);
     }
-  };
+  }, [answers, questionOpenedAt, questions, sessionData?.session_id]);
+
+  useEffect(() => {
+    if (stage === "quiz" && antiCheatWarnings >= 2) {
+      handleQuizSubmit();
+    }
+  }, [antiCheatWarnings, stage, handleQuizSubmit]);
 
   useEffect(() => {
     if (stage === "quiz" && quizSecondsLeft === 0 && questions.length) {
       handleQuizSubmit();
     }
-  }, [quizSecondsLeft, stage, questions.length]);
+  }, [quizSecondsLeft, stage, questions.length, handleQuizSubmit]);
 
   const loadCodingProblems = async () => {
     if (!sessionData?.exam?.id) {
@@ -310,7 +325,15 @@ export default function App() {
       const problems = response.data.problems || [];
       setCodingProblems(problems);
       setSelectedProblemId(problems[0]?.id || null);
-      setCodingCode(problems[0]?.starter_code || DEFAULT_CODE);
+      setCodingCodeMap((current) => {
+        const next = { ...current };
+        for (const problem of problems) {
+          if (!next[problem.id]) {
+            next[problem.id] = problem.starter_code || DEFAULT_CODE;
+          }
+        }
+        return next;
+      });
       setStage("coding");
     } catch (requestError) {
       setError(requestError.response?.data?.detail || "Unable to load coding problems.");
@@ -330,7 +353,7 @@ export default function App() {
 
     try {
       const response = await apiClient.post(`/coding/submit/${selectedProblem.id}`, {
-        code: codingCode,
+        code: currentCodingCode,
       });
       setCodingResult(response.data);
       setStage("final");
@@ -618,10 +641,7 @@ export default function App() {
                 <button
                   key={problem.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedProblemId(problem.id);
-                    setCodingCode(problem.starter_code || DEFAULT_CODE);
-                  }}
+                  onClick={() => setSelectedProblemId(problem.id)}
                   className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
                     selectedProblem?.id === problem.id
                       ? "border-cyan-500 bg-cyan-50"
@@ -656,8 +676,16 @@ export default function App() {
                       height="520px"
                       defaultLanguage="java"
                       theme="vs-dark"
-                      value={codingCode}
-                      onChange={(value) => setCodingCode(value || "")}
+                      value={currentCodingCode}
+                      onChange={(value) => {
+                        if (!selectedProblem) {
+                          return;
+                        }
+                        setCodingCodeMap((current) => ({
+                          ...current,
+                          [selectedProblem.id]: value || "",
+                        }));
+                      }}
                       options={{
                         minimap: { enabled: false },
                         fontSize: 14,

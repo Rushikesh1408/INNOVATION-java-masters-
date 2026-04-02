@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     admin_jwt_secret: str
     admin_jwt_algorithm: str = "HS256"
     admin_jwt_expire_minutes: int = 60
+    contestant_jwt_expire_minutes: int = 120
+    trusted_proxy_hops: int = 0
     allowed_origins: str = "http://localhost:5173"
     redis_url: str = "redis://localhost:6379/0"
     celery_broker_url: str = "redis://localhost:6379/1"

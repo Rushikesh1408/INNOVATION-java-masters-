@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.core.config import get_settings
 from app.core.security import create_access_token, create_admin_access_token, decode_token
@@ -124,6 +125,8 @@ def _serialize_problem(problem: CodingProblem, include_hidden: bool = False) -> 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config["JSON_SORT_KEYS"] = False
+    # ProxyFix only trusts forwarded headers when trusted_proxy_hops > 0.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=max(0, int(settings.trusted_proxy_hops)))
     CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": settings.cors_origins}})
 
     @app.after_request
@@ -163,13 +166,16 @@ def create_app() -> Flask:
                     name=name,
                     email=email,
                     exam_id=int(exam_id),
-                    ip_address=request.headers.get("X-Forwarded-For", request.remote_addr or "127.0.0.1"),
+                    ip_address=(request.remote_addr or "127.0.0.1").strip() or "127.0.0.1",
                     device_info=request.headers.get("User-Agent", "unknown"),
+                )
+                contestant_expire_minutes = int(
+                    getattr(settings, "contestant_jwt_expire_minutes", settings.admin_jwt_expire_minutes)
                 )
                 token, expires_in = create_access_token(
                     subject=f"{exam_session.user_id}:{exam_session.id}:{exam_session.exam_id}",
                     role="contestant",
-                    expire_minutes=settings.admin_jwt_expire_minutes,
+                    expire_minutes=contestant_expire_minutes,
                 )
                 response_payload = {
                     "access_token": token,
@@ -273,12 +279,45 @@ def create_app() -> Flask:
         with db_session() as db:
             service = ContestantService(db)
             try:
+                if not isinstance(answers, list):
+                    return _json_error("answers must be a list", 400)
+
                 for answer in answers:
+                    if not isinstance(answer, dict):
+                        return _json_error("Each answer must be an object", 400)
+
+                    raw_question_id = answer.get("question_id")
+                    if raw_question_id is None:
+                        return _json_error("Each answer requires question_id", 400)
+
+                    try:
+                        question_id = int(raw_question_id)
+                    except (TypeError, ValueError):
+                        return _json_error("question_id must be an integer", 400)
+
+                    raw_time_taken = answer.get("time_taken", 0)
+                    try:
+                        time_taken = int(raw_time_taken)
+                    except (TypeError, ValueError):
+                        return _json_error("time_taken must be an integer", 400)
+
+                    if time_taken < 0:
+                        return _json_error("time_taken must be non-negative", 400)
+
+                    raw_selected = answer.get("selected_option")
+                    if raw_selected is None:
+                        selected_option = None
+                    else:
+                        try:
+                            selected_option = int(raw_selected)
+                        except (TypeError, ValueError):
+                            return _json_error("selected_option must be an integer or null", 400)
+
                     service.submit_answer(
                         session_id=session_uuid,
-                        question_id=int(answer.get("question_id")),
-                        selected_option=answer.get("selected_option"),
-                        time_taken=int(answer.get("time_taken", 0)),
+                        question_id=question_id,
+                        selected_option=selected_option,
+                        time_taken=time_taken,
                     )
                 result = service.finalize_result(session_uuid)
             except HTTPException as exc:
@@ -341,6 +380,9 @@ def create_app() -> Flask:
         except Exception as exc:
             return _json_error(str(exc), 401)
 
+        if identity.get("role") != "contestant":
+            return _json_error("Forbidden", 403)
+
         with db_session() as db:
             problem_repo = CodingProblemRepository(db)
             problem = problem_repo.get_by_id(problem_id)
@@ -371,11 +413,29 @@ def create_app() -> Flask:
 
     @app.route("/api/v1/coding/submissions/<int:submission_id>", methods=["GET"])
     def get_submission(submission_id: int):
+        try:
+            identity = _decode_identity()
+        except Exception as exc:
+            return _json_error(str(exc), 401)
+
         with db_session() as db:
             repo = SubmissionRepository(db)
             submission = repo.get_by_id(submission_id)
             if not submission:
                 return _json_error("Submission not found", 404)
+
+            role = identity.get("role")
+            if role == "contestant":
+                current_user = db.query(User).filter(User.id == int(identity.get("user_id", 0))).first()
+                if not current_user or current_user.id != submission.user_id:
+                    return _json_error("Forbidden", 403)
+            elif role == "admin":
+                admin = AdminRepository(db).get_by_username(str(identity.get("username", "")))
+                if not admin:
+                    return _json_error("Forbidden", 403)
+            else:
+                return _json_error("Forbidden", 403)
+
             return jsonify({"submission": {
                 "id": submission.id,
                 "user_id": submission.user_id,
@@ -393,11 +453,20 @@ def create_app() -> Flask:
 
     @app.route("/api/v1/coding/leaderboard/<int:exam_id>", methods=["GET"])
     def coding_leaderboard(exam_id: int):
-        limit = request.args.get("limit", 50)
+        raw_limit = request.args.get("limit", "50")
+        max_limit = 1000
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            return _json_error("limit must be an integer", 400)
+
+        if limit < 1 or limit > max_limit:
+            return _json_error(f"limit must be between 1 and {max_limit}", 400)
+
         with db_session() as db:
             service = CodingService(db)
             try:
-                leaderboard = service.get_coding_leaderboard(exam_id, int(limit))
+                leaderboard = service.get_coding_leaderboard(exam_id, limit)
             except ValueError as exc:
                 return _json_error(str(exc), 400)
             return jsonify({"leaderboard": leaderboard})
