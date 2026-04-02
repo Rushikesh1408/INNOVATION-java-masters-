@@ -24,3 +24,4 @@ class User(Base):
 
     sessions = relationship("Session", back_populates="user")
     results = relationship("Result", back_populates="user")
+    submissions = relationship("Submission", back_populates="user", cascade="all, delete-orphan")

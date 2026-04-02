@@ -31,5 +31,10 @@ class Exam(Base):
         back_populates="exam",
         cascade="all, delete-orphan",
     )
+    coding_problems = relationship(
+        "CodingProblem",
+        back_populates="exam",
+        cascade="all, delete-orphan",
+    )
     sessions = relationship("Session", back_populates="exam")
     results = relationship("Result", back_populates="exam")

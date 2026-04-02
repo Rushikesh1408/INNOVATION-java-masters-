@@ -1,3 +1,5 @@
+from typing import cast
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -21,7 +23,10 @@ if "*" in settings.cors_origins:
 
 app = FastAPI(title=settings.app_name)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(
+    RateLimitExceeded,
+    cast(object, _rate_limit_exceeded_handler),
+)
 app.add_middleware(RequestAuditMiddleware)
 
 app.add_middleware(
