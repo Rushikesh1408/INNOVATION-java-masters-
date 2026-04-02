@@ -18,11 +18,16 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_admin_access_token(subject: str) -> tuple[str, int]:
-    expire_at = datetime.now(UTC) + timedelta(minutes=settings.admin_jwt_expire_minutes)
-    payload = {"sub": subject, "role": "admin", "exp": expire_at}
+def create_access_token(subject: str, role: str = "admin", expire_minutes: int | None = None) -> tuple[str, int]:
+    minutes = expire_minutes if expire_minutes is not None else settings.admin_jwt_expire_minutes
+    expire_at = datetime.now(UTC) + timedelta(minutes=minutes)
+    payload = {"sub": subject, "role": role, "exp": expire_at}
     token = jwt.encode(payload, settings.admin_jwt_secret, algorithm=settings.admin_jwt_algorithm)
-    return token, settings.admin_jwt_expire_minutes * 60
+    return token, minutes * 60
+
+
+def create_admin_access_token(subject: str) -> tuple[str, int]:
+    return create_access_token(subject, role="admin")
 
 
 def decode_token(token: str) -> dict:
