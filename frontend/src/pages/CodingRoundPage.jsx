@@ -5,7 +5,6 @@ import { useParams } from 'react-router-dom';
 
 export default function CodingRoundPage() {
   const { examId, problemId } = useParams();
-  const editorRef = useRef(null);
   const isMountedRef = useRef(true);
   const pollControllerRef = useRef(null);
   const [problem, setProblem] = useState(null);
@@ -60,6 +59,9 @@ export default function CodingRoundPage() {
     }
 
     setLoading(true);
+    // Clear previous submission and test results before making new request
+    setSubmission(null);
+    setTestResults([]);
     try {
       const submitResponse = await axios.post(
         `/api/v1/coding/submit/${problemId}`,
@@ -160,8 +162,8 @@ export default function CodingRoundPage() {
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Constraints</h3>
           <ul className="text-sm text-gray-300 space-y-1">
-            <li>• Time Limit: {problem.time_limit_seconds} seconds</li>
-            <li>• Memory Limit: {problem.memory_limit_mb} MB</li>
+            <li>• Time Limit: {problem.time_limit_seconds ?? 'N/A'} seconds</li>
+            <li>• Memory Limit: {problem.memory_limit_mb ?? 'N/A'} MB</li>
           </ul>
         </div>
 
@@ -186,7 +188,6 @@ export default function CodingRoundPage() {
         {/* Editor */}
         <div className="flex-1">
           <Editor
-            ref={editorRef}
             height="100%"
             defaultLanguage="java"
             theme="vs-dark"
@@ -219,12 +220,12 @@ export default function CodingRoundPage() {
               <div className="flex justify-between">
                 <span>Status:</span>
                 <span className={`font-semibold ${
-                  submission.status === 'accepted' ? 'text-green-400' :
-                  submission.status === 'wrong_answer' ? 'text-red-400' :
-                  submission.status === 'compile_error' ? 'text-red-500' :
+                  submission?.status === 'accepted' ? 'text-green-400' :
+                  submission?.status === 'wrong_answer' ? 'text-red-400' :
+                  submission?.status === 'compile_error' ? 'text-red-500' :
                   'text-yellow-400'
                 }`}>
-                  {submission.status.toUpperCase()}
+                  {submission?.status?.toUpperCase() ?? 'UNKNOWN'}
                 </span>
               </div>
               <div className="flex justify-between">

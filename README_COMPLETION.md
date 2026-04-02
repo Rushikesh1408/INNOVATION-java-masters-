@@ -254,7 +254,7 @@ All endpoints documented at: **http://localhost:8000/docs**
 - [x] Ready for deployment
 
 ### Next Steps for Production:
-1. Replace default admin credentials (`Pass123`) with a strong unique password and rotate any pre-shared credentials
+1. Replace default admin credentials (use `<STRONG_UNIQUE_PASSWORD>`) with a strong unique password and rotate any pre-shared credentials
 2. Switch to PostgreSQL: Update `DATABASE_URL` in `.env`
 3. Generate strong `SECRET_KEY`
 4. Enable HTTPS (SSL/TLS certificate)
@@ -285,7 +285,7 @@ All endpoints documented at: **http://localhost:8000/docs**
 ```
 Visible: 5/5 ✅ (all passed)
 Hidden: 4/5 ✅ (4 passed)
-Execution time: 50ms (< 1s timeout)
+Execution time: 50ms (< 2s timeout)
 
 Score = (4/5 × 70) + 20 + 10 = 56 + 20 + 10 = 86/100
 ```

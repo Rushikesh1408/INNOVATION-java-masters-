@@ -1,11 +1,11 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    JAVA MASTERS EXAM ENGINE - DEPLOYMENT VERIFICATION CHECKLIST
+    JAVA MASTERS EXAM ENGINE - DEPLOYMENT INFORMATION
     
 .DESCRIPTION
-    Complete production readiness verification for the exam platform.
-    Verifies all components, dependencies, and configurations.
+    Informational documentation about deployment status and checklist items.
+    Does not perform actual verification checks (use for reference only).
 #>
 
 Write-Host @"

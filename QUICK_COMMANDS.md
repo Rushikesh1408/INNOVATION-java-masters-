@@ -11,8 +11,11 @@ This file is documentation. It is not an executable script.
 - Set system environment variables via System Properties
 
 ## Start Commands (PowerShell)
+
+**Important:** Run these commands from the repository root directory.
+
 ```powershell
-Set-Location $JAVAMS_ROOT
+Set-Location "<path-to-javams-repo>"
 pip install -r requirements.txt
 
 if (-not $env:ADMIN_USERNAME -or -not $env:ADMIN_PASSWORD) {
@@ -23,15 +26,15 @@ python -m scripts.seed_admin
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-In a second terminal:
+In a second terminal (from repository root):
 ```powershell
-Set-Location $JAVAMS_ROOT
-python scripts/run_celery_worker.py
+Set-Location "<path-to-javams-repo>"
+python -m scripts.run_celery_worker
 ```
 
-Optional frontend terminal:
+Optional frontend terminal (from repository root):
 ```powershell
-Set-Location (Join-Path $JAVAMS_ROOT "frontend")
+Set-Location "<path-to-javams-repo>/frontend"
 npm install
 npm run dev
 ```

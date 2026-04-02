@@ -136,7 +136,17 @@ class CodingService:
             return 0
 
         if eval_result["status"] == "timeout":
-            return int(eval_result["passed_visible"] * 10 + eval_result["passed_hidden"] * 10)
+            # On timeout, score proportionally based on tests passed
+            total_visible = eval_result.get("total_visible", 1) or 1
+            total_hidden = eval_result.get("total_hidden", 1) or 1
+            passed_visible = eval_result.get("passed_visible", 0) or 0
+            passed_hidden = eval_result.get("passed_hidden", 0) or 0
+            
+            visible_score = (passed_visible / total_visible) * 70
+            hidden_score = (passed_hidden / total_hidden) * 20
+            quality_score = 10
+            
+            return int(visible_score + hidden_score + quality_score)
 
         # If not all visible tests passed, 0 score
         if eval_result["passed_visible"] < eval_result["total_visible"]:
@@ -208,15 +218,23 @@ class CodingService:
         )
 
         result = []
+        
+        # Collect user_ids and fetch all users in one query to avoid N+1
+        user_ids = [row[0] for row in users_data]
+        users_map = {}
+        if user_ids:
+            users = self.db.query(User).filter(User.id.in_(user_ids)).all()
+            users_map = {u.id: u for u in users}
+        
         for rank, (user_id, total_score, problems_attempted) in enumerate(users_data, 1):
-            user = self.db.query(User).filter(User.id == user_id).first()
+            user = users_map.get(user_id)
             if user:
                 result.append({
                     "rank": rank,
                     "user_id": user_id,
                     "name": user.name,
                     "total_score": int(total_score or 0),
-                    "submissions": int(problems_attempted or 0),
+                    "problems_attempted": int(problems_attempted or 0),
                 })
 
         return result
